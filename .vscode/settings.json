@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.yaml": "ansible",
+        "type_traits": "cpp",
+        "linked_list.h": "c",
+        "iterator.h": "c",
+        "random": "cpp",
+        "typeinfo": "cpp",
+        "common.h": "c"
+    }
+}
