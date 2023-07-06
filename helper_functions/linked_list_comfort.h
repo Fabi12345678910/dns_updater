@@ -1,4 +1,15 @@
 #include "linked_list.h"
+//required:
+//LINKED_LIST_TYPE
+//LINKED_LIST_PREFIX
+//optional:
+//ITERATOR_TYPE
+//ITERATOR_PREFIX
+//
+//ensure to only create one instance of a LINKED_LIST_PREFIX
+//
+//this header will undefine the mentioned MACROS to avoid unnecessary redefinition
+
 
 #ifndef LINKED_LIST_TYPE
     #define LINKED_LIST_TYPE int
@@ -44,4 +55,11 @@
 #pragma GCC diagnostic pop
 
 #undef PREFIX_NAME
+
+#undef LINKED_LIST_TYPE
+#undef LINKED_LIST_PREFIX
+
+#undef ITERATOR_TYPE
+#undef ITERATOR_PREFIX
+
 #undef CONCAT_INNER
