@@ -8,6 +8,6 @@
 
     void cloudflare_get_dns_state(struct dns_data*);
 
-    void *cloudflare_read_provider_data(char const *current_ptr);
+    void *cloudflare_read_provider_data(char const **current_ptr);
 
 #endif

@@ -78,6 +78,7 @@ void linked_list_free(linked_list *list){
     node = list->first;
     while(node != NULL){
         next_node = node->next;
+        free(node->value);
         free(node);
         node = next_node;
     }

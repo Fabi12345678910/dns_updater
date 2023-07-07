@@ -22,17 +22,28 @@
     #define CONFIG_VALUE_FALSE "false"
 
     //functions for reading various dataTypes
-    int read_value_to_bool(char const ** current_ptr, int *bool_ptr);
-    int read_value_to_string(char const ** current_ptr, char *string_ptr, size_t string_size);
-    int read_provider(char const ** current_ptr, struct provider_functions* provider);
-    int expect_char(const char ** current_ptr, const char expected_char);
-    void skip_empty_chars(char const ** current_ptr);
+    int read_value_to_bool(char const ** ptr_to_current_ptr, int *bool_ptr);
+    int read_value_to_string(char const ** ptr_to_current_ptr, char *string_ptr, size_t string_size);
+    int read_provider(char const ** ptr_to_current_ptr, struct provider_functions* provider);
+    int expect_char(const char ** ptr_to_current_ptr, const char expected_char);
+    void skip_empty_chars(char const ** ptr_to_current_ptr);
 
     typedef struct{
         char const *start;
         unsigned length;
     } key_data;
 
-    key_data read_key(char const ** current_ptr);
+    key_data read_key(char const ** ptr_to_current_ptr);
     int key_matches(key_data key, char const *config_key);
+
+
+    //internal calls for error handling
+    #define error(...) while (1)        \
+    {                                   \
+        fprintf(stderr, __VA_ARGS__);   \
+        exit(EXIT_FAILURE);             \
+    }
+
+    ///@param cond condition to fail if true
+    #define errorIf(cond, ...) if (cond) {error(__VA_ARGS__)}
 #endif

@@ -6,6 +6,7 @@
         "iterator.h": "c",
         "random": "cpp",
         "typeinfo": "cpp",
-        "common.h": "c"
+        "common.h": "c",
+        "configuration_reader.h": "c"
     }
 }

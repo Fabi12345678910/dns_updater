@@ -4,21 +4,24 @@
 #define current_ptr (*ptr_to_current_ptr)
 
 void skip_empty_chars(char const** ptr_to_current_ptr){
-    while(*current_ptr == ' ' || *current_ptr == '\n' || *current_ptr == '\r' || *current_ptr == '\t'){
+    while(*current_ptr == ' ' || *current_ptr == '\n' || *current_ptr == '\r' || *current_ptr == '\t' || *current_ptr == ','){
         current_ptr++;
     }
 }
 
 unsigned read_alphanumeric_chars(char const** ptr_to_current_ptr){
     unsigned length = 0;
-    while((*current_ptr >= 'a' && *current_ptr <= 'z') || (*current_ptr >= '0' && *current_ptr <= '9')){
+    while((*current_ptr >= 'A' && *current_ptr <= 'Z') 
+       || (*current_ptr >= 'a' && *current_ptr <= 'z')
+       || (*current_ptr >= '0' && *current_ptr <= '9')
+       || (*current_ptr == '.' )){
         length++;
         current_ptr++;
     }
     return length;
 }
 
-/// @brief 
+/// @brief
 //compare parts of a string to another string
 /// @param string_start a string to compare
 /// @param string_length the length of the string
@@ -105,3 +108,5 @@ key_data read_key(char const ** ptr_to_current_ptr){
 int key_matches(key_data key, char const *config_key){
     return compare_string(key.start, key.length, config_key);
 }
+
+#undef current_ptr

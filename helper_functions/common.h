@@ -1,6 +1,11 @@
 #ifndef COMMON_H
-    #include <stdint.h>
     #define COMMON_H
+    #include <stdint.h>
+
+    #ifndef DEBUG_LEVEL
+        #define DEBUG_LEVEL 0
+    #endif
+    #include "debug.h"
 
     struct dns_data{
         char dns_name[256];
@@ -16,7 +21,7 @@
     struct provider_functions{
         void (*update_dns)(struct dns_data*);
         void (*get_dns_state)(struct dns_data*);
-        void *(*read_provider_data)(char const *current_ptr);
+        void *(*read_provider_data)(char const **current_ptr);
     };
 
     struct managed_dns_entry{

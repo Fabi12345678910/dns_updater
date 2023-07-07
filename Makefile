@@ -14,7 +14,7 @@ clean:
 	$(RM) $(TARGETS) *.o
 
 dns_updater: dns_updater.o implementation_testing.o configuration_reader.o linked_list.o configuration_reader_common.o cloudflare.o
-	gcc -o dns_updater $(CFLAGS) dns_updater.o implementation_testing.o linked_list.o configuration_reader_common.o cloudflare.o
+	gcc -o dns_updater $(CFLAGS) dns_updater.o implementation_testing.o configuration_reader.o linked_list.o configuration_reader_common.o cloudflare.o
 
 dns_updater.o: dns_updater.c
 	gcc -c $(CFLAGS) dns_updater.c
