@@ -7,6 +7,9 @@
         "random": "cpp",
         "typeinfo": "cpp",
         "common.h": "c",
-        "configuration_reader.h": "c"
+        "configuration_reader.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "ifaddrs.h": "c"
     }
 }

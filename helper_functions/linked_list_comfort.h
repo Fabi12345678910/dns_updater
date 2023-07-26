@@ -38,6 +38,10 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
     
+    static void PREFIX_NAME(LINKED_LIST_PREFIX, linked_list_free_with_function)(linked_list *list, void (* free_func)(LINKED_LIST_TYPE *)){
+        linked_list_free_with_function(list, (void (*)(void*)) free_func);
+    }
+
     static int PREFIX_NAME(LINKED_LIST_PREFIX, linked_list_insert)(linked_list *list, LINKED_LIST_TYPE value){
         return linked_list_insert(list, &value, sizeof(LINKED_LIST_TYPE));
     }

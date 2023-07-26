@@ -6,6 +6,7 @@
 #define DEBUG_LEVEL 1
 #include "helper_functions/debug.h"
 
+#include "helper_functions/ipv4_getters/ipv4_getters.h"
 #include "helper_functions/linked_list.h"
 #include "helper_functions/configuration_reader.h"
 #include "helper_functions/configuration_reader_common.h"
@@ -14,19 +15,28 @@
 #define ITERATOR_PREFIX INT
 #include "helper_functions/linked_list_comfort.h"
 
+#include "helper_functions/ipv6_getters/local_interface_data.h"
+
 int linked_list_testing(void);
 int configuration_reader_common_testing(void);
 int configuration_reader_testing(void);
+int ipv4_address_testing(void);
+int ipv6_address_testing(void);
+
 int test_implementation(void){
     int ret = 0;
 
     ret += linked_list_testing();
     ret += configuration_reader_common_testing();
     ret += configuration_reader_testing();
+    ret += ipv6_address_testing();
+    ret += ipv4_address_testing();
 
 
     if(!ret){
         printf("\n***no errors occured, everything works fine, good job.\n\n");
+    }else{
+        printf("\n***!!! ERRORs occured during testing  .\n\n");
     }
     return ret;
 }
@@ -129,7 +139,7 @@ int configuration_reader_testing(void){
     free_config(config_data);
 
 
-    string = "enableHTTPServer: \r\n true, \t\t    dnsEntries: \n[\n  \r\t{  \n  \n type: AAAA, name: test.de}\n  , \t\n\r\n  {type: A, name: TEST5.de}]";
+    string = "enableHTTPServer: \r\n true, \t\t    dnsEntries: \n[\n  \r\t{  \n  \n type: AAAA, name: test.de}\n  , \t\n\r\n  {type: A, name: TEST5.de, provider: cloudflare, providerData:apiKey}]";
     config_data = read_config_from_string(string);
 
 
@@ -146,8 +156,51 @@ int configuration_reader_testing(void){
     assert(!strcmp(dns_entry1->dns_data.dns_type, "A"));
     assert(!strcmp(dns_entry1->dns_data.dns_name, "TEST5.de"));
 
+    struct cloudflare_provider_data *cloudflare_data = dns_entry1->dns_data.provider_data;
+
+    DEBUG_PRINT_1("cloudflare test api_key: %s\n", cloudflare_data->api_key);
+    assert(!strcmp(cloudflare_data->api_key, "apiKey"));
 
     free_config(config_data);
+
+    return RETURN_SUCCESS;
+}
+
+int ipv4_address_testing(void){
+
+    struct in_addr *in4addr = get_ipv4_address_whats_my_ip();
+    if(in4addr == NULL){
+        DEBUG_PRINT_0("no suitable ipv4 found, likely an error...\n");
+        return RETURN_ERROR;
+    }
+
+    uint8_t * adress_bytes = (uint8_t *) in4addr;
+
+    DEBUG_PRINT_1("found the following ipv4 adress, ensure it's the right one\n");
+    DEBUG_PRINT_1("%hhu.%hhu.%hhu.%hhu\n", adress_bytes[3], adress_bytes[2], adress_bytes[1], adress_bytes[0]);
+
+
+    free(in4addr);
+    return RETURN_SUCCESS;
+}
+
+int ipv6_address_testing(void){
+    struct in6_addr * in6addr = get_ipv6_address_local_interface();
+    if(in6addr == NULL){
+        DEBUG_PRINT_0("warning: no suitable ipv6 found, skipping...\n");
+        return RETURN_SUCCESS;
+    }
+
+    DEBUG_PRINT_1("found the following ipv6 adress, ensure it's the right one\n");
+    for(int i = 0; i<16; i++){
+        if(i % 2 == 0 && i != 0){
+            DEBUG_PRINT_1(":");
+        }
+        DEBUG_PRINT_1("%.2x", in6addr->__in6_u.__u6_addr8[i]);
+    }
+    DEBUG_PRINT_1("\n");
+
+    free(in6addr);
 
     return RETURN_SUCCESS;
 }

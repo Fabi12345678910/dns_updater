@@ -72,16 +72,24 @@ int linked_list_is_empty(linked_list *list){
 //    int linked_list_remove_at(linked_list *list, position_type position){};
 //    int linked_list_replace(linked_list *list, LINKED_LIST_TYPE value){};
 
-void linked_list_free(linked_list *list){
+void linked_list_free_with_function(linked_list *list, void (* free_func)(void *)){
     struct linked_list_node *node,
                             *next_node;
     node = list->first;
     while(node != NULL){
         next_node = node->next;
+        if(free_func != NULL){
+            free_func(node->value);
+        }
+
         free(node->value);
         free(node);
         node = next_node;
     }
+}
+
+void linked_list_free(linked_list *list){
+    linked_list_free_with_function(list, NULL);
 }
 
 /**

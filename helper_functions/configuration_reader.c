@@ -24,16 +24,42 @@
 #define ENABLE_DEBUG_CONFIG_READER 1
 #define DEBUG_PRINT_1_CONFIG_READER(...) DEBUG_PRINT_1_CONDITIONAL(ENABLE_DEBUG_CONFIG_READER, __VA_ARGS__);
 
-/*char* read_file_to_string(char* filename){
+/*struct updater_data *read_file_to_string(char const* filename){
 
 }*/
 
 linked_list * read_dns_sources(const char ** ptr_to_current_ptr);
 
+void config_free_provider_data(struct managed_dns_entry * entry){
+    if (entry->dns_data.provider_data != NULL){
+        free(entry->dns_data.provider_data);
+    }
+}
+
 void free_config(struct updater_data *config){
-    linked_list_free(config->managed_dns_list);
+    dns_linked_list_free_with_function(config->managed_dns_list, config_free_provider_data);
     free(config->managed_dns_list);
     free(config);
+}
+
+void init_dns_data(struct dns_data *dns_data){
+    dns_data->dns_class[0] = '\0';
+    dns_data->dns_name[0] = '\0';
+    dns_data->dns_type[0] = '\0';
+    dns_data->provider_data = NULL;
+    dns_data->rdata = NULL;
+    dns_data->ttl= 3600;
+}
+
+void init_dns_provider(struct provider_functions *provider){
+    provider->get_dns_state = NULL;
+    provider->read_provider_data = NULL;
+    provider->update_dns = NULL;
+}
+
+void init_dns_entry(struct managed_dns_entry *dns_entry){
+    init_dns_data(&dns_entry->dns_data);
+    init_dns_provider(&dns_entry->provider);
 }
 
 struct updater_data *read_config_from_string(char const* string){
@@ -78,6 +104,7 @@ struct updater_data *read_config_from_string(char const* string){
 }
 //read a single dns source, called by read_dns_sources
 int read_dns_source(struct managed_dns_entry * dns_config, const char ** ptr_to_current_ptr){
+//    dns_config->dns_data.provider_data = NULL;
 
     errorIf(expect_char(ptr_to_current_ptr, '{'), "expected {");
     while(**ptr_to_current_ptr != '}'){
@@ -96,7 +123,7 @@ int read_dns_source(struct managed_dns_entry * dns_config, const char ** ptr_to_
                 fprintf(stderr, "unset provider, set provider first before setting providerData\n");
                 return RETURN_ERROR;
             }
-            dns_config->provider.read_provider_data(ptr_to_current_ptr);
+            dns_config->dns_data.provider_data = dns_config->provider.read_provider_data(ptr_to_current_ptr);
         }else{
             DEBUG_PRINT_1_CONFIG_READER("current_ptr: %s\n", *ptr_to_current_ptr);
             fprintf(stderr, "unknown key set in dnsSource\n");
@@ -126,8 +153,9 @@ linked_list * read_dns_sources(const char ** ptr_to_current_ptr){
 
         if(**ptr_to_current_ptr == '{'){
             struct managed_dns_entry dns_entry;
+            init_dns_entry(&dns_entry);
             errorIf(read_dns_source(&dns_entry, ptr_to_current_ptr),"error reading dns source\n");
-            dns_linked_list_insert(list, dns_entry);
+            errorIf(dns_linked_list_insert(list, dns_entry) == RETURN_ERROR, "error inserting dns entry\n");
             skip_empty_chars(ptr_to_current_ptr);
         }else if (**ptr_to_current_ptr == ','){
             continue;

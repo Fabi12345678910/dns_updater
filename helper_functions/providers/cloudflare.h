@@ -4,7 +4,11 @@
     #include "../common.h"
     #define CONFIG_VALUE_PROVIDER_CLOUDFLARE "cloudflare"
 
-    void cloudflare_update_dns (struct dns_data*);
+    struct cloudflare_provider_data{
+        char api_key[41];
+    };
+
+    void cloudflare_update_dns(struct dns_data*);
 
     void cloudflare_get_dns_state(struct dns_data*);
 

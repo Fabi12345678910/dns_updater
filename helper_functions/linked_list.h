@@ -32,5 +32,7 @@
     void* linked_list_get(linked_list *list, position_type position);
     int linked_list_size(linked_list *list);
     int linked_list_is_empty(linked_list *list);
+
     void linked_list_free(linked_list *list);
+    void linked_list_free_with_function(linked_list *list, void (* free_func)(void *));
 #endif

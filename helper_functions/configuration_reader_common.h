@@ -36,14 +36,4 @@
     key_data read_key(char const ** ptr_to_current_ptr);
     int key_matches(key_data key, char const *config_key);
 
-
-    //internal calls for error handling
-    #define error(...) while (1)        \
-    {                                   \
-        fprintf(stderr, __VA_ARGS__);   \
-        exit(EXIT_FAILURE);             \
-    }
-
-    ///@param cond condition to fail if true
-    #define errorIf(cond, ...) if (cond) {error(__VA_ARGS__)}
 #endif
