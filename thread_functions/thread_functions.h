@@ -2,8 +2,8 @@
     #define THREAD_FUNCTIONS_H
 
     // thread_functions:
-    void * updater_func(void *);
-    void * timer_func(void *);
-    void * http_server_func(void *);
+    #include "updater.h"
+    #include "http_server.h"
+    #include "timer.h"
 
 #endif

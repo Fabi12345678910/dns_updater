@@ -2,8 +2,10 @@
 
 #include "../configuration_reader_common.h"
 
-void cloudflare_update_dns (struct dns_data* data){
+char * cloudflare_update_dns (struct dns_data* data, char * new_rdata){
     (void) data;
+    (void) new_rdata;
+    return NULL;
 }
 
 void cloudflare_get_dns_state(struct dns_data* data){

@@ -1,6 +1,8 @@
 #include "configuration_reader.h"
 #include "providers/all_providers.h"
 #include "configuration_reader_common.h"
+#include "ipv4_getters/ipv4_getters.h"
+#include "ipv6_getters/ipv6_getters.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +23,9 @@
 #define CONFIG_VALUE_TRUE "true"
 #define CONFIG_VALUE_FALSE "false"
 
+
+#define MAX_LOG_SIZE 10UL
+
 #define ENABLE_DEBUG_CONFIG_READER 1
 #define DEBUG_PRINT_1_CONFIG_READER(...) DEBUG_PRINT_1_CONDITIONAL(ENABLE_DEBUG_CONFIG_READER, __VA_ARGS__);
 
@@ -39,6 +44,7 @@ void config_free_provider_data(struct managed_dns_entry * entry){
 void free_config(struct updater_data *config){
     dns_linked_list_free_with_function(config->managed_dns_list, config_free_provider_data);
     free(config->managed_dns_list);
+    circular_array_free(&(config->ipc_data.info.logging_array));
     free(config);
 }
 
@@ -47,7 +53,7 @@ void init_dns_data(struct dns_data *dns_data){
     dns_data->dns_name[0] = '\0';
     dns_data->dns_type[0] = '\0';
     dns_data->provider_data = NULL;
-    dns_data->rdata = NULL;
+    dns_data->current_data = NULL;
     dns_data->ttl= 3600;
 }
 
@@ -62,14 +68,39 @@ void init_dns_entry(struct managed_dns_entry *dns_entry){
     init_dns_provider(&dns_entry->provider);
 }
 
+static void free_deref(void* ptr){
+    void ** ptr_to_ptr_to_free = (void**) ptr;
+    DEBUG_PRINT_2("freeing %p, stored at %p\n", *ptr_to_ptr_to_free, ptr);
+    free(*ptr_to_ptr_to_free);
+}
+
+void init_updater_data(struct updater_data* data){
+    data->config.enable_http_server = 1;
+    data->config.get_ipv4_address = get_ipv4_address_whats_my_ip;
+    data->config.get_ipv6_address = get_ipv6_address_local_interface;
+
+    data->ipc_data.update_requested = 0;
+    data->ipc_data.cond_update_requested = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    data->ipc_data.mutex_update_requested = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data->ipc_data.mutex_dns_list = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data->ipc_data.mutex_info = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data->ipc_data.info.ip4_state = STATE_UNDEFINED;
+    data->ipc_data.info.ip6_state = STATE_UNDEFINED;
+    circular_array_init(&data->ipc_data.info.logging_array,sizeof(char*), MAX_LOG_SIZE, free_deref);
+
+    data->managed_dns_list = NULL;
+}
+
 struct updater_data *read_config_from_string(char const* string){
     struct updater_data *updater_data = malloc(sizeof(*updater_data));
     if (updater_data == NULL){
         error("not enough space\n");
     }
 
+    init_updater_data(updater_data);
+
     //init linked list
-    updater_data->managed_dns_list = NULL;
+//    updater_data->managed_dns_list = NULL;
     char const* current_ptr = string;
 
     skip_empty_chars(&current_ptr);

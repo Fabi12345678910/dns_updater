@@ -8,7 +8,7 @@
         char api_key[41];
     };
 
-    void cloudflare_update_dns(struct dns_data*);
+    char * cloudflare_update_dns (struct dns_data* data, char * new_rdata);
 
     void cloudflare_get_dns_state(struct dns_data*);
 

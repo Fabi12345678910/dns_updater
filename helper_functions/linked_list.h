@@ -8,7 +8,7 @@
     #define linked_list struct linked_list_head
     #define position_type size_t
 
-        //linked list head, can be used as a sentinal node to reduce edge cases
+    //linked list head, can be used as a sentinal node to reduce edge cases
     //obviously the value then is unusable
     struct linked_list_head{
         struct linked_list_node *first;

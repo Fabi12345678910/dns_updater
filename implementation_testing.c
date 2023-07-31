@@ -3,11 +3,12 @@
 #include <assert.h>
 
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 2
 #include "helper_functions/debug.h"
 
 #include "helper_functions/ipv4_getters/ipv4_getters.h"
 #include "helper_functions/linked_list.h"
+#include "helper_functions/circular_array.h"
 #include "helper_functions/configuration_reader.h"
 #include "helper_functions/configuration_reader_common.h"
 
@@ -22,6 +23,7 @@ int configuration_reader_common_testing(void);
 int configuration_reader_testing(void);
 int ipv4_address_testing(void);
 int ipv6_address_testing(void);
+int circular_array_testing(void);
 
 int test_implementation(void){
     int ret = 0;
@@ -31,6 +33,7 @@ int test_implementation(void){
     ret += configuration_reader_testing();
     ret += ipv6_address_testing();
     ret += ipv4_address_testing();
+    ret += circular_array_testing();
 
 
     if(!ret){
@@ -39,6 +42,52 @@ int test_implementation(void){
         printf("\n***!!! ERRORs occured during testing  .\n\n");
     }
     return ret;
+}
+
+static void free_deref(void* ptr){
+    void ** ptr_to_ptr_to_free = (void**) ptr;
+    DEBUG_PRINT_2("freeing %p, stored at %p\n", *ptr_to_ptr_to_free, ptr);
+    free(*ptr_to_ptr_to_free);
+}
+
+int circular_array_testing(void){
+    circular_array testing_array;
+//    assert(circular_array_init(&testing_array, sizeof(char*), 0, free) == NULL);
+    assert(circular_array_init(&testing_array, sizeof(char*), 100, free_deref) != NULL);
+    assert(testing_array.free_func == free_deref);
+    char* ptr = malloc(40);
+    testing_array.free_func(&ptr);
+    assert(circular_array_is_empty(&testing_array));
+
+    char* testing_char = malloc(4);
+    testing_char[0] = 'o';
+    testing_char[1] = 'l';
+    testing_char[2] = 'a';
+    testing_char[3] = '\0';
+    assert(circular_array_append(&testing_array, &testing_char) == 0);
+
+
+    char* testing_char2 = malloc(2);
+    testing_char2[0] = '_';
+    testing_char2[1] = '\0';
+    assert(circular_array_append(&testing_array, &testing_char2) == 1);
+
+    assert(!circular_array_is_empty(&testing_array));
+    assert(circular_array_size(&testing_array) == 2);
+
+    //overfill array
+    for(int i = 0; i < 1000; i++){
+        char* value = malloc(1);
+        *value = 'q';
+        assert(circular_array_append(&testing_array, &value) >= 0);
+    }
+    assert(circular_array_size(&testing_array) == 100);
+
+    //test contents with iterator
+
+    circular_array_free(&testing_array);
+
+    return 0;
 }
 
 int linked_list_testing(void){
@@ -124,7 +173,7 @@ int configuration_reader_common_testing(void){
     assert(provider.read_provider_data != NULL);
 
     assert(provider.get_dns_state == cloudflare_get_dns_state);
-    assert(provider.get_dns_state != cloudflare_update_dns);
+//    assert(provider.get_dns_state != cloudflare_update_dns);
     assert(provider.read_provider_data == cloudflare_read_provider_data);
     assert(provider.update_dns == cloudflare_update_dns);
 

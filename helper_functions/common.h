@@ -8,6 +8,14 @@
         #define DEBUG_LEVEL 1
     #endif
     #include "debug.h"
+    #include "circular_array.h"
+
+    typedef int state;
+    #define STATE_UNDEFINED 0
+    #define STATE_OKAY 1
+    #define STATE_WARNING 2
+    #define STATE_ERROR 3
+    #define STATE_UNUSED 4
 
     struct dns_data{
         //the fully clasified dns name (e.g. subdomain.test.de)
@@ -23,14 +31,17 @@
         int32_t ttl;
 
         //current state of data
-        char *rdata;
+        void *current_data;
 
         //holds data for the provider, e.g. authentication data
         void *provider_data;
+
+        //the state of the dns entry
+        state entry_state;
     };
 
     struct provider_functions{
-        void (*update_dns)(struct dns_data*);
+        char * (*update_dns)(struct dns_data*, char * new_rdata);
         void (*get_dns_state)(struct dns_data*);
         void *(*read_provider_data)(char const **current_ptr);
     };
@@ -53,12 +64,21 @@
         int enable_http_server;
     };
 
+    struct state_information{
+        state ip4_state;
+        state ip6_state;
+        circular_array logging_array;
+    };
+
     struct process_communication{
         pthread_mutex_t mutex_dns_list;
         int update_requested;
         pthread_mutex_t mutex_update_requested;
         pthread_cond_t cond_update_requested;
+        struct state_information info;
+        pthread_mutex_t mutex_info;
     };
+
 
     struct updater_data{
         struct global_configuration config;
@@ -66,6 +86,11 @@
         struct process_communication ipc_data;
     };
 
+    #define LOG(data, message) circular_array_append(&((data)->ipc_data.info.logging_array), (message))
+
+/*    static void log_message(struct updater_data* data, char* message){
+        LOG(data, message);
+    }*/
 
     //internal calls for error handling
     #define error(...) while (1)        \

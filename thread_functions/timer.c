@@ -1,4 +1,6 @@
 // thread_functions:
+#include "timer.h"
+
 #include "../helper_functions/common.h"
 
 void * timer_func(void * arg){
