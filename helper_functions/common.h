@@ -10,6 +10,9 @@
     #endif
     #include <unistd.h>
 
+    //define TEST_TIMER to enable short 3 sec timer
+    #define TEST_TIMER
+
     #define ENABLE_LOG_STDOUT 1
     #ifndef DEBUG_LEVEL
         #define DEBUG_LEVEL 1

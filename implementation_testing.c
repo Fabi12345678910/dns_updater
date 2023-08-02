@@ -29,6 +29,7 @@ int ipv4_address_testing(void);
 int ipv6_address_testing(void);
 int circular_array_testing(void);
 int updater_testing(void);
+int timer_testing(void);
 
 int test_implementation(void){
     int ret = 0;
@@ -40,6 +41,9 @@ int test_implementation(void){
     ret += ipv4_address_testing();
     ret += circular_array_testing();
     ret += updater_testing();
+#ifdef TEST_TIMER
+    ret += timer_testing();
+#endif
 
     if(!ret){
         printf("\n***no errors occured, everything works fine, good job.\n\n");
@@ -47,6 +51,30 @@ int test_implementation(void){
         printf("\n***!!! ERRORs occured during testing  .\n\n");
     }
     return ret;
+}
+
+int timer_testing(void){
+    printf("waiting 3 secs for timer...\n");
+    pthread_t timer_thread;
+    struct updater_data data;
+    data.ipc_data.cond_update_shutdown_requested = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    data.ipc_data.mutex_update_shutdown_requested = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data.ipc_data.update_requested = 0;
+    data.ipc_data.shutdown_requested = 0;
+
+    pthread_create(&timer_thread, NULL, timer_func, (void*) &data);
+    while(!data.ipc_data.update_requested){
+        sched_yield();
+    }
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
+    data.ipc_data.shutdown_requested = 1;
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+
+    pthread_join(timer_thread, NULL);
+    printf("proof weather timer has set the update_requested flag");
+    assert(data.ipc_data.update_requested);
+
+    return RETURN_SUCCESS;
 }
 
 struct in6_addr ip6addr_dummy;
