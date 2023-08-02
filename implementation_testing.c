@@ -1,22 +1,26 @@
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-
 #define DEBUG_LEVEL 2
 #include "helper_functions/debug.h"
 
+#include "helper_functions/common.h"
+
 #include "helper_functions/ipv4_getters/ipv4_getters.h"
+#include "helper_functions/ipv6_getters/ipv6_getters.h"
 #include "helper_functions/linked_list.h"
 #include "helper_functions/circular_array.h"
 #include "helper_functions/configuration_reader.h"
 #include "helper_functions/configuration_reader_common.h"
+#include "thread_functions/thread_functions.h"
 
 #define LINKED_LIST_TYPE int
 #define ITERATOR_PREFIX INT
 #include "helper_functions/linked_list_comfort.h"
 
-#include "helper_functions/ipv6_getters/local_interface_data.h"
 
 int linked_list_testing(void);
 int configuration_reader_common_testing(void);
@@ -24,6 +28,7 @@ int configuration_reader_testing(void);
 int ipv4_address_testing(void);
 int ipv6_address_testing(void);
 int circular_array_testing(void);
+int updater_testing(void);
 
 int test_implementation(void){
     int ret = 0;
@@ -34,7 +39,7 @@ int test_implementation(void){
     ret += ipv6_address_testing();
     ret += ipv4_address_testing();
     ret += circular_array_testing();
-
+    ret += updater_testing();
 
     if(!ret){
         printf("\n***no errors occured, everything works fine, good job.\n\n");
@@ -44,10 +49,130 @@ int test_implementation(void){
     return ret;
 }
 
+struct in6_addr ip6addr_dummy;
+
+int ip4_dummy_updater_count;
+int ip6_dummy_updater_count;
+
+struct in_addr * ip4_dummy_func(){
+    static struct in_addr ip4addr_dummy = {.s_addr = 1};
+    if(ip4addr_dummy.s_addr != 3){
+        ip4addr_dummy.s_addr++;
+    }
+    DEBUG_PRINT_1("returning adress %u\n", ip4addr_dummy.s_addr);
+    return &ip4addr_dummy;
+}
+
+struct in6_addr * ip6_dummy_func(){
+    static struct in6_addr ip6addr_dummy = {.__in6_u.__u6_addr32 = {0,0,0,0}};
+    if(ip6addr_dummy.__in6_u.__u6_addr8[15] != 3){
+        ip6addr_dummy.__in6_u.__u6_addr8[15]++;        
+    }
+    DEBUG_PRINT_1("returning adress ending with %u\n", ip6addr_dummy.__in6_u.__u6_addr32[0]);
+    return &ip6addr_dummy;
+}
+
 static void free_deref(void* ptr){
     void ** ptr_to_ptr_to_free = (void**) ptr;
     DEBUG_PRINT_2("freeing %p, stored at %p\n", *ptr_to_ptr_to_free, ptr);
     free(*ptr_to_ptr_to_free);
+}
+
+int dummy_updates = 0;
+
+char *dummy_updater(struct dns_data* dns_data, char * new_rdata){
+    (void) dns_data;
+    dummy_updates++;
+    DEBUG_PRINT_1("updating dns entry with %s\n", new_rdata);
+    return NULL;
+}
+
+int updater_testing(void){
+    struct updater_data data;
+    data.config.enable_http_server = 0;
+    data.config.get_ipv4_address = ip4_dummy_func;
+    data.config.get_ipv6_address = ip6_dummy_func;
+    
+    data.ipc_data.cond_update_shutdown_requested = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    data.ipc_data.info.ip4_state = STATE_UNDEFINED;
+    data.ipc_data.info.ip6_state = STATE_UNDEFINED;
+    errorIf(NULL == circular_array_init(&data.ipc_data.info.logging_array, sizeof(char*), 50, free_deref), "error init circular array\n");
+    data.ipc_data.mutex_dns_list = data.ipc_data.mutex_info = data.ipc_data.mutex_update_shutdown_requested 
+        = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data.ipc_data.shutdown_requested = data.ipc_data.update_requested = 0;
+    data.managed_dns_list = malloc(sizeof(*data.managed_dns_list));
+    linked_list_init(data.managed_dns_list);
+
+    struct managed_dns_entry dummy_entry={.dns_data = {.current_data = NULL, .dns_class = "IN",
+                                        .dns_name = "test.test.com", .dns_type= "A",
+                                        .entry_state = STATE_UNDEFINED, .provider_data = NULL, .ttl = 360}};
+
+    dummy_entry.provider.get_dns_state = NULL;
+    dummy_entry.provider.read_provider_data = NULL;
+    dummy_entry.provider.update_dns = dummy_updater;
+
+    assert(dns_linked_list_insert(data.managed_dns_list, dummy_entry) == 0);
+
+    struct managed_dns_entry dummy_entry_6 = dummy_entry;
+    sprintf(dummy_entry_6.dns_data.dns_type, "AAAA");
+
+    assert(dns_linked_list_insert(data.managed_dns_list, dummy_entry_6) == 1);
+
+    pthread_t updater_thread;
+    errorIf(pthread_create(&updater_thread, NULL, updater_func, (void*) &data), "error creating thread\n");
+
+    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    sleep(1);
+    sched_yield();
+
+    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    data.ipc_data.update_requested = 1;
+    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
+    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+
+    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    sleep(1);
+    sched_yield();
+
+    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    data.ipc_data.update_requested = 1;
+    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
+    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+
+    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    sleep(1);
+    sched_yield();
+
+    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    data.ipc_data.update_requested = 1;
+    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
+    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+
+    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    sleep(1);
+
+    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    data.ipc_data.update_requested = 1;
+    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
+    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+
+    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    sleep(1);
+
+    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    data.ipc_data.shutdown_requested = 1;
+    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
+    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+
+
+    errorIf(pthread_join(updater_thread, NULL), "error joining updater_thread\n");
+
+    DEBUG_PRINT_1("number of dummy updates received: %d\n", dummy_updates);
+    assert(dummy_updates == 5);
+
+    free_config(&data);
+
+    return RETURN_SUCCESS;
 }
 
 int circular_array_testing(void){
@@ -84,6 +209,13 @@ int circular_array_testing(void){
     assert(circular_array_size(&testing_array) == 100);
 
     //test contents with iterator
+    iterator array_iter;
+    circular_array_iterator_init(&testing_array, &array_iter);
+    while(ITERATOR_HAS_NEXT(&array_iter)){
+        char ** element = ITERATOR_NEXT(&array_iter);
+        assert(**element == 'q');
+    }
+    circular_array_iterator_free(&array_iter);
 
     circular_array_free(&testing_array);
 
@@ -186,6 +318,7 @@ int configuration_reader_testing(void){
     struct updater_data * config_data = read_config_from_string(string);
     assert(config_data->config.enable_http_server);
     free_config(config_data);
+    free(config_data);
 
 
     string = "enableHTTPServer: \r\n true, \t\t    dnsEntries: \n[\n  \r\t{  \n  \n type: AAAA, name: test.de}\n  , \t\n\r\n  {type: A, name: TEST5.de, provider: cloudflare, providerData:apiKey}]";
@@ -211,6 +344,7 @@ int configuration_reader_testing(void){
     assert(!strcmp(cloudflare_data->api_key, "apiKey"));
 
     free_config(config_data);
+    free(config_data);
 
     return RETURN_SUCCESS;
 }

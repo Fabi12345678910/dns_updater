@@ -42,6 +42,10 @@ struct in6_addr* get_ipv6_address_local_interface(){
             }
             DEBUG_PRINT_1("\n");
 
+            char ipv6_string[40];
+            write_ip6_to_string(addr6->sin6_addr, ipv6_string);
+            DEBUG_PRINT_1("ip6 converted by macro: %s\n", ipv6_string);
+
             //check for a specific internet device
             if (strcmp(addr->ifa_name, INTERNET_DEVICE)){
                 DEBUG_PRINT_1("wrong internet device, ignoring...\n\n")

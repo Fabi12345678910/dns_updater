@@ -3,7 +3,14 @@
     #include <stdint.h>
     #include <pthread.h>
     #include <netinet/in.h>
+    #include <stdarg.h>
 
+    #ifndef _DEFAULT_SOURCE
+        #define _DEFAULT_SOURCE
+    #endif
+    #include <unistd.h>
+
+    #define ENABLE_LOG_STDOUT 1
     #ifndef DEBUG_LEVEL
         #define DEBUG_LEVEL 1
     #endif
@@ -72,9 +79,10 @@
 
     struct process_communication{
         pthread_mutex_t mutex_dns_list;
+        int shutdown_requested;
         int update_requested;
-        pthread_mutex_t mutex_update_requested;
-        pthread_cond_t cond_update_requested;
+        pthread_mutex_t mutex_update_shutdown_requested;
+        pthread_cond_t cond_update_shutdown_requested;
         struct state_information info;
         pthread_mutex_t mutex_info;
     };
@@ -86,11 +94,24 @@
         struct process_communication ipc_data;
     };
 
-    #define LOG(data, message) circular_array_append(&((data)->ipc_data.info.logging_array), (message))
 
-/*    static void log_message(struct updater_data* data, char* message){
-        LOG(data, message);
-    }*/
+    #if (ENABLE_LOG_STDOUT)
+        #define LOG_STDOUT(format, ...) fprintf(stdout, format, __VA_ARGS__);fprintf(stdout, "\n")
+    #else
+        #define LOG_STDOUT
+    #endif
+
+    #define LOG_RAW(data, message) circular_array_append(&((data)->ipc_data.info.logging_array), &(message))
+    #define LOG_PRINTF(data, max_size, ...) do                          \
+    {                                                                           \
+        char *msg_ptr = malloc(max_size);                                       \
+        if(snprintf(msg_ptr, max_size, __VA_ARGS__) >= (int)max_size){  \
+            msg_ptr[max_size-1] = '\0';                                         \
+        }                                                                       \
+        LOG_STDOUT("%s", msg_ptr);                                              \
+                                                                                \
+        LOG_RAW(data, msg_ptr);                                                 \
+    } while (0);
 
     //internal calls for error handling
     #define error(...) while (1)        \
@@ -104,5 +125,21 @@
     #define errorIf(cond, ...) if (cond) {error(__VA_ARGS__)}
 
     #define expect_fine(cond) if (cond) {error(#cond)}
+
+    #define four_bit_to_hex(value) ((value) <= 9 ? '0' + (value) : 'a' + ((value) - 10))
+
+    ///@param ip6addr, must be struct in6_addr
+    ///@param string, a character array of at least 40 length
+    #define write_ip6_to_string(ip6addr, string) do{    \
+        int write_head = 0;                                 \
+        for(int i = 0; i<16; i++){                          \
+            if(i % 2 == 0 && i != 0){                       \
+                string[write_head++] = ':';                 \
+            }                                               \
+            string[write_head++] = four_bit_to_hex((ip6addr).__in6_u.__u6_addr8[i] >> 4);       \
+            string[write_head++] = four_bit_to_hex((ip6addr).__in6_u.__u6_addr8[i] & 0x0F);     \
+        }                                                   \
+        string[write_head] = '\0';                          \
+    } while(0)
 
 #endif

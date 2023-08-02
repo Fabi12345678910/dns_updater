@@ -10,6 +10,9 @@
         "configuration_reader.h": "c",
         "stdlib.h": "c",
         "string.h": "c",
-        "ifaddrs.h": "c"
+        "ifaddrs.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "ipv4_getters.h": "c"
     }
 }

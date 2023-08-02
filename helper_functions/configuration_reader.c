@@ -35,17 +35,19 @@
 
 linked_list * read_dns_sources(const char ** ptr_to_current_ptr);
 
-void config_free_provider_data(struct managed_dns_entry * entry){
+void config_free_dns_data(struct managed_dns_entry * entry){
     if (entry->dns_data.provider_data != NULL){
         free(entry->dns_data.provider_data);
+    }
+    if (entry->dns_data.current_data != NULL){
+        free(entry->dns_data.current_data);
     }
 }
 
 void free_config(struct updater_data *config){
-    dns_linked_list_free_with_function(config->managed_dns_list, config_free_provider_data);
+    dns_linked_list_free_with_function(config->managed_dns_list, config_free_dns_data);
     free(config->managed_dns_list);
     circular_array_free(&(config->ipc_data.info.logging_array));
-    free(config);
 }
 
 void init_dns_data(struct dns_data *dns_data){
@@ -80,8 +82,9 @@ void init_updater_data(struct updater_data* data){
     data->config.get_ipv6_address = get_ipv6_address_local_interface;
 
     data->ipc_data.update_requested = 0;
-    data->ipc_data.cond_update_requested = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
-    data->ipc_data.mutex_update_requested = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data->ipc_data.shutdown_requested = 0;
+    data->ipc_data.cond_update_shutdown_requested = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    data->ipc_data.mutex_update_shutdown_requested = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     data->ipc_data.mutex_dns_list = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     data->ipc_data.mutex_info = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     data->ipc_data.info.ip4_state = STATE_UNDEFINED;
