@@ -11,7 +11,7 @@
     #include <unistd.h>
 
     //define TEST_TIMER to enable short 3 sec timer
-    #define TEST_TIMER
+//    #define TEST_TIMER
 
     #define ENABLE_LOG_STDOUT 1
     #ifndef DEBUG_LEVEL
@@ -144,5 +144,63 @@
         }                                                   \
         string[write_head] = '\0';                          \
     } while(0)
+
+
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-function"
+    #define FD_TO_STRING_INITIAL_BUFFER_SIZE 64
+
+    static char * read_fd_to_string(const int fd, const int stop_on_double_crlf){
+        size_t buffer_size = FD_TO_STRING_INITIAL_BUFFER_SIZE;
+        size_t total_read_bytes = 0;
+        ssize_t read_bytes = 0;
+        char *buffer = malloc(buffer_size);
+        while(1){
+            read_bytes = read(fd, buffer+total_read_bytes, buffer_size-total_read_bytes);
+            DEBUG_PRINT_1("read %zd bytes\n", read_bytes);
+            if(read_bytes < 0){
+                DEBUG_PRINT_1("error reading curl output\n");
+                return NULL;
+            }
+            if(read_bytes == 0){
+                //reached EOF
+                break;
+            }
+            total_read_bytes += read_bytes;
+            DEBUG_PRINT_2("last 4 characters: %hhd %hhd %hhd %hhd\n", buffer[total_read_bytes-4], buffer[total_read_bytes-3], buffer[total_read_bytes-2], buffer[total_read_bytes-1]);
+            if(stop_on_double_crlf){
+                if (buffer[total_read_bytes-4] == '\r' && buffer[total_read_bytes-3] == '\n' && buffer[total_read_bytes-2] == '\r' && buffer[total_read_bytes-1] == '\n'){
+                    break;
+                }
+            }
+
+            if (total_read_bytes >= buffer_size){
+                DEBUG_PRINT_1("increasing buffer size from %zu to %zu\n", buffer_size, buffer_size * 2);
+                buffer = realloc(buffer, buffer_size * 2);
+                errorIf(buffer == NULL, "curl: error getting buffer space\n");
+                buffer_size *= 2;
+            }
+        }
+        buffer[total_read_bytes] = '\0';
+        DEBUG_PRINT_2("read from fd: %s\n", buffer);
+        return buffer;
+    }
+
+    #define FAULTY_STATE(state) ((state) == STATE_ERROR || (state) == STATE_UNDEFINED)
+
+    static int any_error_occured(struct updater_data* data){
+        if (FAULTY_STATE(data->ipc_data.info.ip4_state)) return 1;
+        if (FAULTY_STATE(data->ipc_data.info.ip6_state)) return 1;
+        iterator dns_iter;
+        linked_list_iterator_init(data->managed_dns_list, &dns_iter);
+        while(ITERATOR_HAS_NEXT(&dns_iter)){
+            struct managed_dns_entry* dns_entry = DNS_ITERATOR_NEXT(&dns_iter);
+            if(FAULTY_STATE(dns_entry->dns_data.entry_state)) return 1;
+        }
+
+        return 0;
+    }
+
+    #pragma GCC diagnostic pop
 
 #endif

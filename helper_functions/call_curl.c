@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "call_curl.h"
 #include "common.h"
@@ -33,37 +34,23 @@ char * call_curl(char *const argv[]){
 
     errorIf(close(stdout_pipe[PIPE_WRITE]), "error closing pipe\n");
 
-    // build string from pipe
-    size_t buffer_size = INITIAL_BUFFER_SIZE;
-    size_t total_read_bytes = 0;
-    ssize_t read_bytes = 0;
-    char *buffer = malloc(INITIAL_BUFFER_SIZE);
-    errorIf(buffer == NULL, "curl: error getting buffer space\n");
-
     //wait for curl to end, detect errors
+    int curl_status;
+    errorIf(waitpid(pid, &curl_status, 0) == -1, "error waiting for curl\n");
 
-    //string building
-    while(1){
-        read_bytes = read(stdout_pipe[PIPE_READ], buffer+total_read_bytes, buffer_size-total_read_bytes);
-        DEBUG_PRINT_1("read %zd bytes\n", read_bytes);
-        errorIf(read_bytes < 0, "error reading curl output\n");
-        if(read_bytes == 0){
-            //reached EOF
-            break;
-        }
-        total_read_bytes += read_bytes;
-
-        if (total_read_bytes >= buffer_size){
-            DEBUG_PRINT_1("increasing buffer size from %zu to %zu\n", buffer_size, buffer_size * 2);
-            buffer = realloc(buffer, buffer_size * 2);
-            errorIf(buffer == NULL, "curl: error getting buffer space\n");
-            buffer_size *= 2;
-        }
+    if(WEXITSTATUS(curl_status) != 0){
+        //curl stopped unexpectedly, returning NULL
+        DEBUG_PRINT_1("curl stopped unexpectedly\n");
+        return NULL;
     }
+//    errorIf()
 
-    buffer[total_read_bytes] = '\0';
-    DEBUG_PRINT_1("*** begin curl output ***\n%s\n*** end curl output ***\n", buffer);
+    // build string from pipe
+    char *curl_output = read_fd_to_string(stdout_pipe[PIPE_READ], 0);
+    errorIf(curl_output == NULL, "curl: error getting buffer space\n");
+
+    DEBUG_PRINT_1("*** begin curl output ***\n%s\n*** end curl output ***\n", curl_output);
 
     errorIf(close(stdout_pipe[PIPE_READ]), "error closing pipe\n");
-    return buffer;
+    return curl_output;
 }

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dns updater state</title>
+    <style>
+        .dot_okay {
+            height: 25px;
+            width: 25px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+    <style>
+        .dot_undefined {
+            height: 25px;
+            width: 25px;
+            background-color: #ff0088;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+    <style>
+        .dot_warning {
+            height: 25px;
+            width: 25px;
+            background-color: #ffb300;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+    <style>
+        .dot_unused {
+            height: 25px;
+            width: 25px;
+            background-color: #575757;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+    <style>
+        .dot_error {
+            height: 25px;
+            width: 25px;
+            background-color: #ff2600;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+<h1 align=center>global health state: <span class= dot_undefined></span><span class= dot_okay></span></h1>
+<h2>ipv4 state: <span class= dot_undefined></span></h2>
+<h2>ipv6 state: <span class= dot_undefined></span></h2>
+<h1>dns entry states:</h1>
+<ul>
+    <li><h2>entry1: <span class= dot_undefined></span></h2></li>
+</ul>
+<h1>last log entries:</h1>
+<ul>
+    <li><h3>dummy log info</h3></li>
+</ul>
+</body>
+</html>

@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
     //now start the following threads:
     // - updater, waits for conditional variable
     // - timed trigger, sets the conditional variable each 5 mins
-    // - http server, receives either a GET -> responds with status or triggers depending on path of GET, or a POST -> introduces new configuration
+    // - http server, receives either a GET -> responds with status or triggers update depending on path of GET, or a POST -> introduces new configuration
     // 
 
     pthread_t updater_thread, timer_thread, http_server_thread;
@@ -46,6 +46,10 @@ int main(int argc, char const *argv[])
     errorIf(pthread_create(&updater_thread, NULL, updater_func, (void *) updater_data), "error creating updater thread\n");
     errorIf(pthread_create(&timer_thread, NULL, timer_func, (void *) updater_data), "error creating timer thread\n");
     errorIf(pthread_create(&http_server_thread, NULL, http_server_func, (void *) updater_data), "error creating http server thread\n");
+
+    while(1){
+        (void) 1;
+    }
 
     free_config(updater_data);
     return EXIT_SUCCESS;
