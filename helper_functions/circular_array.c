@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#define DEBUG_LEVEL 2
+//#define DEBUG_LEVEL 2
 #include "debug.h"
 
 circular_array* circular_array_init(circular_array* array, size_t element_size,

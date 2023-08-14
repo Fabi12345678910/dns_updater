@@ -88,7 +88,9 @@ struct in_addr * ip4_dummy_func(){
         ip4addr_dummy.s_addr++;
     }
     DEBUG_PRINT_1("returning adress %u\n", ip4addr_dummy.s_addr);
-    return &ip4addr_dummy;
+    struct in_addr *ip4_malloced_dummy = malloc(sizeof(*ip4_malloced_dummy));
+    *ip4_malloced_dummy = ip4addr_dummy;
+    return ip4_malloced_dummy;
 }
 
 struct in6_addr * ip6_dummy_func(){
@@ -97,7 +99,9 @@ struct in6_addr * ip6_dummy_func(){
         ip6addr_dummy.__in6_u.__u6_addr8[15]++;        
     }
     DEBUG_PRINT_1("returning adress ending with %u\n", ip6addr_dummy.__in6_u.__u6_addr32[0]);
-    return &ip6addr_dummy;
+    struct in6_addr *ip6_malloced_dummy = malloc(sizeof(*ip6_malloced_dummy));
+    *ip6_malloced_dummy = ip6addr_dummy;
+    return ip6_malloced_dummy;
 }
 
 static void free_deref(void* ptr){
@@ -125,8 +129,9 @@ int updater_testing(void){
     data.ipc_data.info.ip4_state = STATE_UNDEFINED;
     data.ipc_data.info.ip6_state = STATE_UNDEFINED;
     errorIf(NULL == circular_array_init(&data.ipc_data.info.logging_array, sizeof(char*), 50, free_deref), "error init circular array\n");
-    data.ipc_data.mutex_dns_list = data.ipc_data.mutex_info = data.ipc_data.mutex_update_shutdown_requested 
-        = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data.ipc_data.mutex_dns_list = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data.ipc_data.mutex_info = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    data.ipc_data.mutex_update_shutdown_requested = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     data.ipc_data.shutdown_requested = data.ipc_data.update_requested = 0;
     data.managed_dns_list = malloc(sizeof(*data.managed_dns_list));
     linked_list_init(data.managed_dns_list);
@@ -149,48 +154,49 @@ int updater_testing(void){
     pthread_t updater_thread;
     errorIf(pthread_create(&updater_thread, NULL, updater_func, (void*) &data), "error creating thread\n");
 
-    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    DEBUG_PRINT_1("1. sleeping for 1s to try to make the updater wait\n");
     sleep(1);
     sched_yield();
 
-    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
     data.ipc_data.update_requested = 1;
-    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
-    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+    expect_fine(pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested));
 
-    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    DEBUG_PRINT_1("2. sleeping for 1s to try to make the updater wait\n");
     sleep(1);
     sched_yield();
 
-    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
+    DEBUG_PRINT_1("locked mutex 2, requesting update\n");
     data.ipc_data.update_requested = 1;
-    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
-    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+    expect_fine(pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested));
 
-    DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
+    DEBUG_PRINT_1("3. sleeping for 1s to try to make the updater wait\n");
     sleep(1);
     sched_yield();
 
-    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
     data.ipc_data.update_requested = 1;
-    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
-    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+    expect_fine(pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested));
 
     DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
     sleep(1);
 
-    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
     data.ipc_data.update_requested = 1;
-    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
-    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+    expect_fine(pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested));
 
     DEBUG_PRINT_1("sleeping for 1s to try to make the updater wait\n");
     sleep(1);
 
-    pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested);
+    expect_fine(pthread_mutex_lock(&data.ipc_data.mutex_update_shutdown_requested));
     data.ipc_data.shutdown_requested = 1;
-    pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested);
-    pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested);
+    expect_fine(pthread_mutex_unlock(&data.ipc_data.mutex_update_shutdown_requested));
+    expect_fine(pthread_cond_signal(&data.ipc_data.cond_update_shutdown_requested));
 
 
     errorIf(pthread_join(updater_thread, NULL), "error joining updater_thread\n");

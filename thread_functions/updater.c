@@ -150,7 +150,7 @@ void * updater_func(void * arg){
                 }
             }else if (!strcmp(dns_entry->dns_data.dns_type, "AAAA")){
                 if(data->ipc_data.info.ip6_state != STATE_UNUSED){
-                        ipv6Update(data, dns_entry, ip6addr);
+                    ipv6Update(data, dns_entry, ip6addr);
                 }
             }
         }
@@ -159,6 +159,6 @@ void * updater_func(void * arg){
         if(ip6addr != NULL) free(ip6addr);
 
     }
-    DEBUG_PRINT_1("updater: returning\n");
+    DEBUG_PRINT_0("updater: returning\n");
     return NULL;
 }

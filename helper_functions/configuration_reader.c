@@ -38,7 +38,9 @@ char *read_file_to_string(char const* pathname){
         fprintf(stderr, "error opening file %s\n", pathname);
         return NULL;
     }
-    return read_fd_to_string(fd, 0);
+    char* string = read_fd_to_string(fd, 0);
+    expect_fine(close(fd));
+    return string;
 }
 
 linked_list * read_dns_sources(const char ** ptr_to_current_ptr);

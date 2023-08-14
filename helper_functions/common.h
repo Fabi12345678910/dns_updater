@@ -13,12 +13,12 @@
     //define to disable the dummy provider
 //    #define DISABLE_DUMMY_PROVIDER
 
-    //define TEST_TIMER to enable short 3 sec timer
+    //define TEST_TIMER to enable short 3 sec timer(used by implementation testing)
 //    #define TEST_TIMER
 
     #define ENABLE_LOG_STDOUT 1
     #ifndef DEBUG_LEVEL
-        #define DEBUG_LEVEL 1
+        #define DEBUG_LEVEL 0
     #endif
     #include "debug.h"
     #include "circular_array.h"

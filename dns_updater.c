@@ -69,18 +69,20 @@ int main(int argc, char const *argv[])
         sleep(10);
         DEBUG_PRINT_1("checking for received sigint\n");
         if(sigint_shutdown){
-//            expect_fine(pthread_mutex_lock(&updater_data->ipc_data.mutex_update_shutdown_requested));
+
+            //i would like to not use the broadcast, but without broadcasting/signaling
+            //the updater_thread would not wake up from pthread_cond_wait
+            expect_fine(pthread_mutex_lock(&updater_data->ipc_data.mutex_update_shutdown_requested));
             updater_data->ipc_data.shutdown_requested = 1;
-//            expect_fine(pthread_mutex_unlock(&updater_data->ipc_data.mutex_update_shutdown_requested));
-//            expect_fine(pthread_cond_broadcast(&updater_data->ipc_data.cond_update_shutdown_requested));
+            expect_fine(pthread_mutex_unlock(&updater_data->ipc_data.mutex_update_shutdown_requested));
+            expect_fine(pthread_cond_broadcast(&updater_data->ipc_data.cond_update_shutdown_requested));
+            
             pthread_kill(updater_thread, SIGINT);
             pthread_kill(timer_thread, SIGINT);
             if(updater_data->config.enable_http_server){
                 pthread_kill(http_server_thread, SIGINT);
             }
-            //i would like to not use this, but without broadcasting/signaling
-            //the updater_thread would not wake up from pthread_cond_wait
-            expect_fine(pthread_cond_broadcast(&updater_data->ipc_data.cond_update_shutdown_requested));
+//            expect_fine(pthread_cond_broadcast(&updater_data->ipc_data.cond_update_shutdown_requested));
 
             expect_fine(pthread_join(updater_thread, NULL));
             expect_fine(pthread_join(timer_thread, NULL));

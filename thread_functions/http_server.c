@@ -2,12 +2,11 @@
 #include "http_server.h"
 
 #define _DEFAULT_SOURCE
-#define DEBUG_LEVEL 2
+//#define DEBUG_LEVEL 2
 #include "../helper_functions/common.h"
 #include "http_macros.h"
 
 #include <string.h>
-#include <poll.h>
 #include <errno.h>
 
 #define PORT_NUMBER 80
@@ -31,12 +30,8 @@ void * http_server_func(void * arg){
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT_NUMBER);    
 
-    errorIf(bind(sock,(struct sockaddr *) &servaddr, sizeof(servaddr)), "error binding port\n");
+    errorIf(bind(sock,(struct sockaddr *) &servaddr, sizeof(servaddr)), "error %d binding port\n", errno);
     errorIf(listen(sock, 4), "error listening on socket");
-
-    /*struct pollfd fds;
-    fds.fd = sock;
-    fds.events = POLLIN ^ POLLPRI;*/
 
     while(!data->ipc_data.shutdown_requested){
         DEBUG_PRINT_1("http_server: accepting next incoming connection\n");
@@ -47,6 +42,7 @@ void * http_server_func(void * arg){
             continue;
         }
         errorIf(handler_data.sock == -1, "error accepting client\n");
+        DEBUG_PRINT_0("http_server: answering incoming connection\n");
         handler_data.updater_data = data;
         //use only one thread for the http server as of now, this is way easier to terminate
         connection_handler((void*) &handler_data);
@@ -56,32 +52,9 @@ void * http_server_func(void * arg){
         expect_fine(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED));
         errorIf(pthread_create(&handler_thread, &attr, connection_handler, (void*) handler_data), "error creating connection handler thread\n");
 */
-
-/*
-        int poll_return = poll(&fds, 1, 1000 * 2);
-        errorIf(poll_return == -1, "error polling on socket\n");
-        if(poll_return == 0){
-            DEBUG_PRINT_1("http_server: poll timed out, nothing to receive\n")
-        }
-        else if(fds.revents & POLLIN){
-            //actually got something
-            DEBUG_PRINT_1("http_server: got a incoming connection\n");
-            struct connection_handler_data* handler_data = malloc(sizeof(*handler_data));
-            handler_data->sock = accept(sock, NULL, NULL);
-            errorIf(handler_data->sock == -1, "error accepting client\n");
-            handler_data->updater_data = data;
-            pthread_t handler_thread;
-            pthread_attr_t attr;
-            errorIf(pthread_attr_init(&attr), "error initializing attributes\n");
-            expect_fine(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED));
-            errorIf(pthread_create( &handler_thread, &attr, connection_handler, (void*) handler_data), "error creating connection handler thread\n");
-        }else{
-            DEBUG_PRINT_1("http_server: weird stuff on the socket, ignoring for now\n");
-            DEBUG_PRINT_2("http_server: revents: %x\n", fds.revents);
-        }*/
     }
     expect_fine(close(sock));
-    DEBUG_PRINT_1("http_server: returning\n");
+    DEBUG_PRINT_0("http_server: returning\n");
     return NULL;
 }
 
@@ -118,7 +91,7 @@ void *connection_handler(void * arg){
     char* request = read_fd_to_string(data->sock, 1);
     if(request == NULL){
         DEBUG_PRINT_1("error reading request\n");
-        close(data->sock);
+        expect_fine(close(data->sock));
         return NULL;
     }
 
@@ -127,14 +100,13 @@ void *connection_handler(void * arg){
         if(!starts_with(" ", &work_ptr)){
             //return 400 malformed biiitch
             handle_malformed_request(data);
-        }
-        if(starts_with("/dns-update ", &work_ptr)){
+        }else if(starts_with("/dns-update ", &work_ptr)){
             //trigger dns update and return 200
             handle_dns_update(data);
         }else if (starts_with("/health-check ", &work_ptr)){
             //return 200 if healthy, else return 500
             handle_health_check(data);
-        }else if (starts_with("/state", &work_ptr)){
+        }else if (starts_with("/state ", &work_ptr)){
             //return status page with 200
             handle_state(data);
         }else if (starts_with("/ ", &work_ptr)){
@@ -149,6 +121,7 @@ void *connection_handler(void * arg){
         handle_malformed_request(data);
     }
 
+    free(request);
     close(data->sock);
     return NULL;
 }
@@ -186,7 +159,6 @@ void handle_health_check(struct connection_handler_data *data){
         responce.content = "<h1> unhealthy :( </h1>";
     }
     send_responce(&responce, data->sock);
-    return;
 }
 
 void handle_malformed_request(struct connection_handler_data *data){
