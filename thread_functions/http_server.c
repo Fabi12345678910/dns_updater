@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <poll.h>
+#include <errno.h>
 
 #define PORT_NUMBER 80
 
@@ -33,11 +34,30 @@ void * http_server_func(void * arg){
     errorIf(bind(sock,(struct sockaddr *) &servaddr, sizeof(servaddr)), "error binding port\n");
     errorIf(listen(sock, 4), "error listening on socket");
 
-    struct pollfd fds;
+    /*struct pollfd fds;
     fds.fd = sock;
-    fds.events = POLLIN ^ POLLPRI;
+    fds.events = POLLIN ^ POLLPRI;*/
 
-    while(1){
+    while(!data->ipc_data.shutdown_requested){
+        DEBUG_PRINT_1("http_server: accepting next incoming connection\n");
+        struct connection_handler_data handler_data;
+        handler_data.sock = accept(sock, NULL, NULL);
+        if(handler_data.sock == -1 && errno == EINTR){
+            DEBUG_PRINT_1("http_server: got interrupted while accepting\n");
+            continue;
+        }
+        errorIf(handler_data.sock == -1, "error accepting client\n");
+        handler_data.updater_data = data;
+        //use only one thread for the http server as of now, this is way easier to terminate
+        connection_handler((void*) &handler_data);
+/*        pthread_t handler_thread;
+        pthread_attr_t attr;
+        errorIf(pthread_attr_init(&attr), "error initializing attributes\n");
+        expect_fine(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED));
+        errorIf(pthread_create(&handler_thread, &attr, connection_handler, (void*) handler_data), "error creating connection handler thread\n");
+*/
+
+/*
         int poll_return = poll(&fds, 1, 1000 * 2);
         errorIf(poll_return == -1, "error polling on socket\n");
         if(poll_return == 0){
@@ -53,14 +73,15 @@ void * http_server_func(void * arg){
             pthread_t handler_thread;
             pthread_attr_t attr;
             errorIf(pthread_attr_init(&attr), "error initializing attributes\n");
-            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+            expect_fine(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED));
             errorIf(pthread_create( &handler_thread, &attr, connection_handler, (void*) handler_data), "error creating connection handler thread\n");
         }else{
             DEBUG_PRINT_1("http_server: weird stuff on the socket, ignoring for now\n");
             DEBUG_PRINT_2("http_server: revents: %x\n", fds.revents);
-        }
+        }*/
     }
-
+    expect_fine(close(sock));
+    DEBUG_PRINT_1("http_server: returning\n");
     return NULL;
 }
 
@@ -187,10 +208,8 @@ void handle_state(struct connection_handler_data * data){
     state global_health_state = any_error_occured(data->updater_data) ? STATE_ERROR : STATE_OKAY;
 
     //build dns states
-
-
     errorIf(pthread_mutex_lock(&data->updater_data->ipc_data.mutex_dns_list), "handle_state: error acquiring dns list mutex\n");
-    char dns_states[1 + 300 * linked_list_size(data->updater_data->managed_dns_list)];
+    char dns_states[1 + 350 * linked_list_size(data->updater_data->managed_dns_list)];
     dns_states[0] = '\0';
 
     int total_written_bytes = 0;
@@ -200,7 +219,7 @@ void handle_state(struct connection_handler_data * data){
 
     while(ITERATOR_HAS_NEXT(&iter_dns)){
         struct managed_dns_entry * dns_entry = DNS_ITERATOR_NEXT(&iter_dns);
-        written_bytes = snprintf(dns_states+total_written_bytes, sizeof(dns_states) - total_written_bytes, "<li><h2>%s(%s): %s</h2></li>\r\n", 
+        written_bytes = snprintf(dns_states+total_written_bytes, sizeof(dns_states) - total_written_bytes, "<li><h3>%s(%s): <span class= %s></span></h3></li>\r\n", 
         dns_entry->dns_data.dns_name, dns_entry->dns_data.dns_type, state_as_dot(dns_entry->dns_data.entry_state));
         total_written_bytes += written_bytes;
         if(total_written_bytes == (int) sizeof(dns_states)){

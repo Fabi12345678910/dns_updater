@@ -13,6 +13,7 @@
         "ifaddrs.h": "c",
         "array": "c",
         "string_view": "c",
-        "ipv4_getters.h": "c"
+        "ipv4_getters.h": "c",
+        "updater.h": "c"
     }
 }

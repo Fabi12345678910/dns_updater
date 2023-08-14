@@ -10,6 +10,9 @@
     #endif
     #include <unistd.h>
 
+    //define to disable the dummy provider
+//    #define DISABLE_DUMMY_PROVIDER
+
     //define TEST_TIMER to enable short 3 sec timer
 //    #define TEST_TIMER
 
@@ -82,8 +85,8 @@
 
     struct process_communication{
         pthread_mutex_t mutex_dns_list;
-        int shutdown_requested;
-        int update_requested;
+        volatile int shutdown_requested;
+        volatile int update_requested;
         pthread_mutex_t mutex_update_shutdown_requested;
         pthread_cond_t cond_update_shutdown_requested;
         struct state_information info;
@@ -127,7 +130,7 @@
     ///@param __VA_ARGS__ error message, like printf
     #define errorIf(cond, ...) if (cond) {error(__VA_ARGS__)}
 
-    #define expect_fine(cond) if (cond) {error(#cond)}
+    #define expect_fine(cond) if (cond) {perror(#cond);}
 
     #define four_bit_to_hex(value) ((value) <= 9 ? '0' + (value) : 'a' + ((value) - 10))
 
@@ -195,6 +198,7 @@
         linked_list_iterator_init(data->managed_dns_list, &dns_iter);
         while(ITERATOR_HAS_NEXT(&dns_iter)){
             struct managed_dns_entry* dns_entry = DNS_ITERATOR_NEXT(&dns_iter);
+            DEBUG_PRINT_1("checking wether %s is faulty\n", dns_entry->dns_data.dns_name);
             if(FAULTY_STATE(dns_entry->dns_data.entry_state)) return 1;
         }
 

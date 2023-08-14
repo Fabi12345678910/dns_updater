@@ -6,8 +6,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #define CONFIG_KEY_ENABLE_HTTP "enableHTTPServer"
+#define CONFIG_KEY_ENABLE_IPV4 "enableIPv4"
+#define CONFIG_KEY_ENABLE_IPV6 "enableIPv6"
 #define CONFIG_KEY_IPV6_SOURCE "ipv4Source"
 #define CONFIG_KEY_IPV4_SOURCE "ipv6Source"
 #define CONFIG_KEY_DNS_SOURCES "dnsEntries"
@@ -29,9 +32,14 @@
 #define ENABLE_DEBUG_CONFIG_READER 1
 #define DEBUG_PRINT_1_CONFIG_READER(...) DEBUG_PRINT_1_CONDITIONAL(ENABLE_DEBUG_CONFIG_READER, __VA_ARGS__);
 
-/*struct updater_data *read_file_to_string(char const* filename){
-
-}*/
+char *read_file_to_string(char const* pathname){
+    int fd = open(pathname, O_RDONLY);
+    if(fd == -1){
+        fprintf(stderr, "error opening file %s\n", pathname);
+        return NULL;
+    }
+    return read_fd_to_string(fd, 0);
+}
 
 linked_list * read_dns_sources(const char ** ptr_to_current_ptr);
 
@@ -94,6 +102,17 @@ void init_updater_data(struct updater_data* data){
     data->managed_dns_list = NULL;
 }
 
+int read_enabled_into_state(const char ** ptr_to_current_ptr, state* stat){
+    int bool_val;
+    if(read_value_to_bool(ptr_to_current_ptr, &bool_val)) return RETURN_ERROR;
+    if(bool_val){
+        *stat = STATE_UNDEFINED;
+    }else{
+        *stat = STATE_UNUSED;
+    }
+    return RETURN_SUCCESS;
+}
+
 struct updater_data *read_config_from_string(char const* string){
     struct updater_data *updater_data = malloc(sizeof(*updater_data));
     if (updater_data == NULL){
@@ -114,8 +133,11 @@ struct updater_data *read_config_from_string(char const* string){
         key_data key = read_key(&current_ptr);
         //read value depending on key
         if(key_matches(key, CONFIG_KEY_ENABLE_HTTP)){
-            //TODO check return value and perhaps fail
-            read_value_to_bool(&current_ptr, &updater_data->config.enable_http_server);
+            errorIf(read_value_to_bool(&current_ptr, &updater_data->config.enable_http_server), "error reading http_enable bool\n");
+        }else if(key_matches(key, CONFIG_KEY_ENABLE_IPV4)){
+            errorIf(read_enabled_into_state(&current_ptr, &updater_data->ipc_data.info.ip4_state), "error reading enable ipv4 value\n")
+        }else if(key_matches(key, CONFIG_KEY_ENABLE_IPV6)){
+            errorIf(read_enabled_into_state(&current_ptr, &updater_data->ipc_data.info.ip6_state), "error reading enable ipv6 value\n")
         }else if(key_matches(key, CONFIG_KEY_DNS_SOURCES)){
             //this is the most interesting part, all the dns entries are loaded
             updater_data->managed_dns_list = read_dns_sources(&current_ptr);

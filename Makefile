@@ -17,8 +17,8 @@ all: $(TARGETS)
 clean:
 	$(RM) $(TARGETS) *.o
 
-dns_updater: dns_updater.o implementation_testing.o configuration_reader.o linked_list.o circular_array.o configuration_reader_common.o cloudflare.o call_curl.o $(THREAD_FUNCTIONS_O) $(GETTERS_O)
-	gcc -o dns_updater $(CFLAGS) dns_updater.o implementation_testing.o configuration_reader.o linked_list.o circular_array.o configuration_reader_common.o cloudflare.o call_curl.o $(THREAD_FUNCTIONS_O) $(GETTERS_O)
+dns_updater: dns_updater.o implementation_testing.o configuration_reader.o linked_list.o circular_array.o configuration_reader_common.o cloudflare.o dummy.o call_curl.o $(THREAD_FUNCTIONS_O) $(GETTERS_O)
+	gcc -o dns_updater $(CFLAGS) dns_updater.o implementation_testing.o configuration_reader.o linked_list.o circular_array.o configuration_reader_common.o cloudflare.o dummy.o call_curl.o $(THREAD_FUNCTIONS_O) $(GETTERS_O)
 
 dns_updater.o: dns_updater.c
 	gcc -c $(CFLAGS) dns_updater.c
@@ -43,6 +43,9 @@ configuration_reader_common.o: helper_functions/configuration_reader_common.c
 
 cloudflare.o: helper_functions/providers/cloudflare.c
 	gcc -c $(CFLAGS) helper_functions/providers/cloudflare.c
+
+dummy.o: helper_functions/providers/dummy.c
+	gcc -c $(CFLAGS) helper_functions/providers/dummy.c
 
 updater.o: thread_functions/updater.c
 	gcc -c $(CFLAGS) thread_functions/updater.c

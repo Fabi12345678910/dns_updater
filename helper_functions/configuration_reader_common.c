@@ -80,6 +80,13 @@ int read_provider(char const ** ptr_to_current_ptr, struct provider_functions* p
         provider->read_provider_data = cloudflare_read_provider_data;
         provider->update_dns = cloudflare_update_dns;
     }
+    #ifndef DISABLE_DUMMY_PROVIDER
+    else if(compare_string(value_begin, length, CONFIG_VALUE_PROVIDER_DUMMY)){
+        provider->get_dns_state = dummy_get_dns_state;
+        provider->read_provider_data = dummy_read_provider_data;
+        provider->update_dns = dummy_update_dns;
+    }
+    #endif
     //add other providers here
     else{
         return RETURN_ERROR;

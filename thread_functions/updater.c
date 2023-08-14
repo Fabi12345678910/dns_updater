@@ -2,7 +2,7 @@
 #include "updater.h"
 
 #include "../helper_functions/common.h"
-#include "string.h"
+#include <string.h>
 
 static void ipv4Update(struct updater_data * data, struct managed_dns_entry *dns_entry, struct in_addr *new_ip4addr){
     (void) data;
@@ -94,12 +94,14 @@ static void ipv6Update(struct updater_data * data, struct managed_dns_entry *dns
 }
 
 void * updater_func(void * arg){
-    while(1){  
-        struct updater_data * data = arg;
+
+    struct updater_data * data = arg;
+    while(!data->ipc_data.shutdown_requested){
         expect_fine(pthread_mutex_lock(&data->ipc_data.mutex_update_shutdown_requested));
         while(!data->ipc_data.update_requested && !data->ipc_data.shutdown_requested){
             DEBUG_PRINT_1("updater: no update requested, awaiting condition variable\n");
             expect_fine(pthread_cond_wait(&data->ipc_data.cond_update_shutdown_requested, &data->ipc_data.mutex_update_shutdown_requested));
+            DEBUG_PRINT_1("updater: woken up\n");
         }
         if(data->ipc_data.shutdown_requested){
             expect_fine(pthread_mutex_unlock(&data->ipc_data.mutex_update_shutdown_requested));
@@ -112,21 +114,26 @@ void * updater_func(void * arg){
         expect_fine(pthread_mutex_unlock(&data->ipc_data.mutex_update_shutdown_requested));
 
         //get current ipv4 and ipv6
-        struct in_addr  *ip4addr = data->config.get_ipv4_address();
-        struct in6_addr *ip6addr = data->config.get_ipv6_address();
-
-        if(ip4addr == NULL){
-            LOG_PRINTF(data, 40, "updater: no ipv4 address available");
-            data->ipc_data.info.ip4_state = STATE_ERROR;
-        }else{
-            data->ipc_data.info.ip4_state = STATE_OKAY;
+        struct in_addr *ip4addr = NULL;
+        struct in6_addr *ip6addr = NULL;
+        if(data->ipc_data.info.ip4_state != STATE_UNUSED){
+            ip4addr = data->config.get_ipv4_address();
+            if(ip4addr == NULL){
+                LOG_PRINTF(data, 40, "updater: no ipv4 address available");
+                data->ipc_data.info.ip4_state = STATE_ERROR;
+            }else{
+                data->ipc_data.info.ip4_state = STATE_OKAY;
+            }
         }
 
-        if(ip6addr == NULL){
-            LOG_PRINTF(data, 40, "updater: no ipv6 address available");
-            data->ipc_data.info.ip6_state = STATE_ERROR;
-        }else{
-            data->ipc_data.info.ip6_state = STATE_OKAY;
+        if(data->ipc_data.info.ip6_state != STATE_UNUSED){
+            ip6addr = data->config.get_ipv6_address();
+            if(ip6addr == NULL){
+                LOG_PRINTF(data, 40, "updater: no ipv6 address available");
+                data->ipc_data.info.ip6_state = STATE_ERROR;
+            }else{
+                data->ipc_data.info.ip6_state = STATE_OKAY;
+            }
         }
 
         expect_fine(pthread_mutex_lock(&data->ipc_data.mutex_dns_list));
@@ -138,13 +145,18 @@ void * updater_func(void * arg){
         while(ITERATOR_HAS_NEXT(&dns_entries_iterator)){
             dns_entry = DNS_ITERATOR_NEXT(&dns_entries_iterator);
             if(!strcmp(dns_entry->dns_data.dns_type, "A")){
-                ipv4Update(data, dns_entry, ip4addr);
+                if(data->ipc_data.info.ip4_state != STATE_UNUSED){
+                    ipv4Update(data, dns_entry, ip4addr);
+                }
             }else if (!strcmp(dns_entry->dns_data.dns_type, "AAAA")){
-                ipv6Update(data, dns_entry, ip6addr);
+                if(data->ipc_data.info.ip6_state != STATE_UNUSED){
+                        ipv6Update(data, dns_entry, ip6addr);
+                }
             }
         }
-
         expect_fine(pthread_mutex_unlock(&data->ipc_data.mutex_dns_list));
+        if(ip4addr != NULL) free(ip4addr);
+        if(ip6addr != NULL) free(ip6addr);
 
     }
     DEBUG_PRINT_1("updater: returning\n");

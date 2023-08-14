@@ -4,6 +4,6 @@
 
 void free_config(struct updater_data *config);
 
-char* read_file_to_string(char* filename);
+char* read_file_to_string(char const* filename);
 
 struct updater_data *read_config_from_string(char const* string);

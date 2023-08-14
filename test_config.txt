@@ -1,0 +1,10 @@
+enableHTTPServer: true
+enableIPv4: true
+enableIPv6: false
+dnsEntries: [
+    {
+        name: dummy.internet,
+        type: A
+        provider: dummy
+    }
+]

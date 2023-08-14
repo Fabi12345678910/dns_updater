@@ -23,6 +23,6 @@ void * timer_func(void * arg){
         expect_fine(pthread_cond_signal(&data->ipc_data.cond_update_shutdown_requested));
         sleep(SLEEP_SECONDS);
     }
-    
+    DEBUG_PRINT_1("timer: returning\n");
     return NULL;
 }
