@@ -4,7 +4,7 @@ enableIPv6: false
 dnsEntries: [
     {
         name: dummy.internet,
-        type: A
+        type: A,
         provider: dummy
     }
 ]
