@@ -6,6 +6,8 @@
 
     struct cloudflare_provider_data{
         char api_key[41];
+        //the name of the cloudflare zone
+//        char zone_name[256];
     };
 
     char * cloudflare_update_dns(struct dns_data* data, char * new_rdata);

@@ -15,10 +15,12 @@
 
     //define TEST_TIMER to enable short 3 sec timer(used by implementation testing)
 //    #define TEST_TIMER
+//enables dummy responces
+    #define TEST_CLOUDFLARE
 
     #define ENABLE_LOG_STDOUT 1
     #ifndef DEBUG_LEVEL
-        #define DEBUG_LEVEL 0
+        #define DEBUG_LEVEL 1
     #endif
     #include "debug.h"
     #include "circular_array.h"
@@ -126,11 +128,14 @@
         exit(EXIT_FAILURE);             \
     }
 
+    //free ptr if not null
+    #define free_or_null(ptr) do{if(ptr!=NULL) free(ptr); ptr = NULL;}while(0)
+
     ///@param cond condition to fail if true
     ///@param __VA_ARGS__ error message, like printf
     #define errorIf(cond, ...) if (cond) {error(__VA_ARGS__)}
 
-    #define expect_fine(cond) if (cond) {perror(#cond);}
+    #define expect_fine(cond) if (cond) {fprintf(stderr, #cond); exit(1);}
 
     #define four_bit_to_hex(value) ((value) <= 9 ? '0' + (value) : 'a' + ((value) - 10))
 
@@ -204,6 +209,8 @@
 
         return 0;
     }
+
+    #define malloc_and_return_error_msg(msg) do{char *error_msg = malloc(sizeof(msg)); strcpy(error_msg, msg); return error_msg;}while(0)
 
     #pragma GCC diagnostic pop
 

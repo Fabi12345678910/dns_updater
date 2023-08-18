@@ -30,6 +30,7 @@ int ipv6_address_testing(void);
 int circular_array_testing(void);
 int updater_testing(void);
 int timer_testing(void);
+int cloudflare_testing(void);
 
 int test_implementation(void){
     int ret = 0;
@@ -40,8 +41,9 @@ int test_implementation(void){
     ret += ipv6_address_testing();
     ret += ipv4_address_testing();
     ret += circular_array_testing();
-    ret += updater_testing();
+    ret += cloudflare_testing();
 #ifdef TEST_TIMER
+    ret += updater_testing();
     ret += timer_testing();
 #endif
 
@@ -51,6 +53,32 @@ int test_implementation(void){
         printf("\n***!!! ERRORs occured during testing  .\n\n");
     }
     return ret;
+}
+
+int cloudflare_testing(void){
+    struct dns_data testing_data = {.current_data = NULL, .dns_class = "", .dns_name = "cloudflare.com", .dns_type = "AAAA", .entry_state = STATE_UNDEFINED, .provider_data = NULL, .ttl = 360};
+    DEBUG_PRINT_1("testing cloudflare dns servers, check wether outputs are okay\n");
+    cloudflare_get_dns_state(&testing_data);
+    assert(testing_data.current_data != NULL);
+    free(testing_data.current_data);
+    testing_data.current_data = NULL;
+
+    testing_data.dns_type[1] = '\0';
+    cloudflare_get_dns_state(&testing_data);
+    assert(testing_data.current_data != NULL);
+    free(testing_data.current_data);
+
+    DEBUG_PRINT_1("testing update_dns with dummy api key, this should fail\n");
+    struct cloudflare_provider_data dummy_provider_data = {.api_key="0123456789012345678901234567890123456789"};
+    strcpy(testing_data.dns_name, "test.test");
+    testing_data.provider_data = (void*) &dummy_provider_data;
+    char *error_msg = cloudflare_update_dns(&testing_data, "1.2.3.4");
+    if(error_msg != NULL){
+        DEBUG_PRINT_1("cloudflare dns error message: %s", error_msg);
+        free(error_msg);
+        return RETURN_ERROR;
+    }
+    return RETURN_SUCCESS;
 }
 
 int timer_testing(void){
