@@ -67,6 +67,7 @@ void init_dns_data(struct dns_data *dns_data){
     dns_data->provider_data = NULL;
     dns_data->current_data = NULL;
     dns_data->ttl= 3600;
+    dns_data->entry_state = STATE_UNDEFINED;
 }
 
 void init_dns_provider(struct provider_functions *provider){

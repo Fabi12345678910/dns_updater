@@ -1,65 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>dns updater state</title>
-    <style>
-        .dot_okay {
-            height: 25px;
-            width: 25px;
-            background-color: #00ff00;
-            border-radius: 50%;
-            display: inline-block;
-        }
-    </style>
-    <style>
-        .dot_undefined {
-            height: 25px;
-            width: 25px;
-            background-color: #ff0088;
-            border-radius: 50%;
-            display: inline-block;
-        }
-    </style>
-    <style>
-        .dot_warning {
-            height: 25px;
-            width: 25px;
-            background-color: #ffb300;
-            border-radius: 50%;
-            display: inline-block;
-        }
-    </style>
-    <style>
-        .dot_unused {
-            height: 25px;
-            width: 25px;
-            background-color: #575757;
-            border-radius: 50%;
-            display: inline-block;
-        }
-    </style>
-    <style>
-        .dot_error {
-            height: 25px;
-            width: 25px;
-            background-color: #ff2600;
-            border-radius: 50%;
-            display: inline-block;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNS Updater Status</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: white;
+    }
+
+    header {
+      background-color: #333;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .section {
+      flex: 1 1 calc(50% - 20px);
+      margin: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .undefined { background-color: #777; color: #333; }
+    .error { background-color: #ff5656; color: white; }
+    .warn { background-color: #ffd25b; color: #333; }
+    .okay { background-color: #67c97b; color: #333; }
+    .unused { background-color: #444; color: white; }
+
+    /* Additional styling for log entries */
+    .log-list {
+      list-style: none;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+      background-color: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
-
-<h1 align=center>global health state: <span class= dot_undefined></span><span class= dot_okay></span></h1>
-<h2>ipv4 state: <span class= dot_undefined></span></h2>
-<h2>ipv6 state: <span class= dot_undefined></span></h2>
-<h1>dns entry states:</h1>
-<ul>
-    <li><h2>entry1: <span class= dot_undefined></span></h2></li>
-</ul>
-<h1>last log entries:</h1>
-<ul>
-    <li><h3>dummy log info</h3></li>
-</ul>
+  <header>
+    <h1>DNS Updater Status</h1>
+  </header>
+  <div class="container">
+    <div class="section">
+      <h2>Global Health</h2>
+      <div class="status undefined">Undefined</div>
+    </div>
+    <div class="section">
+      <h2>IPv4 State</h2>
+      <div class="status error">Error</div>
+    </div>
+    <div class="section">
+      <h2>IPv6 State</h2>
+      <div class="status warn">Warning</div>
+    </div>
+    <div class="section">
+      <h2>Managed DNS Entries</h2>
+      <ul>
+        <li class="status error">example.com - Error</li>
+        <li class="status okay">subdomain.example.com - OK</li>
+        <li class="status error">example.com - Error</li>
+      </ul>
+    </div>
+    <div class="section">
+      <h2>Recently Occurred Log Entries</h2>
+      <ul class="log-list">
+        <li class="log-entry">Failed to update example.com</li>
+        <li class="log-entry">Successfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.comSuccessfully updated subdomain.example.com</li>
+        <li class="log-entry">Another log entry</li>
+      </ul>
+    </div>
+  </div>
 </body>
 </html>

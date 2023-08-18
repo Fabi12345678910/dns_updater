@@ -5,7 +5,7 @@
 
 #include <linux/if_addr.h>
 
-#define DEBUG_LEVEL 2
+//#define DEBUG_LEVEL 2
 #include "../common.h"
 
 

@@ -20,7 +20,7 @@ int read_formatted(const char * str, const char * fmt, ...)
 }
 
 struct in_addr* get_ipv4_address_whats_my_ip(){
-    char * responce = call_exec("curl", (char *const []) {"curl", "-4", "https://cloudflare.com/cdn-cgi/trace", NULL});
+    char * responce = call_exec("curl", (char *const []) {"curl", "-s", "-4", "https://cloudflare.com/cdn-cgi/trace", NULL});
 
     struct in_addr* adress = malloc(sizeof(adress));
     errorIf(adress == NULL, "error reserving adress space\n");

@@ -22,7 +22,7 @@ static void ipv4Update(struct updater_data * data, struct managed_dns_entry *dns
     char ipv4_string[4 * 3 + 3 + 1]; //build ipv4string 4 octetts plus 3 dots plus \0
     uint8_t * adress_bytes = (uint8_t *) new_ip4addr;
 
-    if (snprintf(ipv4_string, sizeof(ipv4_string), "%hhu.%hhu.%hhu.%hhu\n", 
+    if (snprintf(ipv4_string, sizeof(ipv4_string), "%hhu.%hhu.%hhu.%hhu", 
                     adress_bytes[3], adress_bytes[2], adress_bytes[1], adress_bytes[0])
                             >= (int) sizeof(ipv4_string)){
         LOG_PRINTF(data, 320, "ipv4Update ERROR for %s: new ip adress longer for 16 chars", dns_entry->dns_data.dns_name)

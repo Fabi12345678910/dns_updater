@@ -93,7 +93,7 @@ static char *get_zone_id(struct dns_data *data, char* auth_header, char **zone_i
     expect_fine(snprintf(update_url, update_url_size, GET_ZONE_ID_URL_TEMPLATE, zone_name) >= (int) update_url_size);
 
     DEBUG_PRINT_1("calling curl with GET on %s\n", update_url);
-    char *curl_result = call_exec("curl", (char *const []) {"curl", "-X", "GET", update_url, "-H", auth_header, "-H", "Content-Type: application/json", NULL});
+    char *curl_result = call_exec("curl", (char *const []) {"curl", "-s", "-X", "GET", update_url, "-H", auth_header, "-H", "Content-Type: application/json", NULL});
 
     #ifdef TEST_CLOUDFLARE
         free_or_null(curl_result);
@@ -136,7 +136,7 @@ static char *get_dns_id(struct dns_data *data, char* auth_header, char *zone_id,
     expect_fine(snprintf(update_url, update_url_size, GET_DNS_ID_URL_TEMPLATE, zone_id, data->dns_type, data->dns_name) >= (int) update_url_size);
 
     DEBUG_PRINT_1("calling curl with GET on %s\n", update_url);
-    char *curl_result = call_exec("curl", (char *const []) {"curl", "-X", "GET", update_url,
+    char *curl_result = call_exec("curl", (char *const []) {"curl", "-s", "-X", "GET", update_url,
                                                                     "-H", auth_header,
                                                                     "-H", "Content-Type: application/json", NULL});
 
@@ -183,8 +183,8 @@ static char *update_dns_entry(struct dns_data *data, char* auth_header, char *zo
     char update_json[update_json_size];
     expect_fine(snprintf(update_json, update_json_size, UPDATE_DNS_JSON_TEMPLATE, data->dns_type, data->dns_name, new_rdata) >= (int) update_json_size);
 
-    DEBUG_PRINT_1("calling curl with PUT on %s\n", update_url);
-    char *curl_result = call_exec("curl", (char *const []) {"curl", "-X", "PUT", update_url, 
+    DEBUG_PRINT_1("calling curl with PUT on %s with body %s\n", update_url, update_json);
+    char *curl_result = call_exec("curl", (char *const []) {"curl", "-s", "-X", "PUT", update_url, 
                                                                     "-H", auth_header, 
                                                                     "-H", "Content-Type: application/json",
                                                                     "--data", update_json, NULL});

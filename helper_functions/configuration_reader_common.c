@@ -14,7 +14,9 @@ unsigned read_alphanumeric_chars(char const** ptr_to_current_ptr){
     while((*current_ptr >= 'A' && *current_ptr <= 'Z') 
        || (*current_ptr >= 'a' && *current_ptr <= 'z')
        || (*current_ptr >= '0' && *current_ptr <= '9')
-       || (*current_ptr == '.' )){
+       || (*current_ptr == '.')
+       || (*current_ptr == '_')
+       || (*current_ptr == '-')){
         length++;
         current_ptr++;
     }
@@ -64,7 +66,6 @@ int read_value_to_string(char const ** ptr_to_current_ptr, char *string_ptr, siz
     unsigned length = read_simple_value(ptr_to_current_ptr, &value_begin);
 
     if(length >= string_size){
-        //TODO alaaarm
         return RETURN_ERROR;
     }
     memcpy(string_ptr, value_begin, length);

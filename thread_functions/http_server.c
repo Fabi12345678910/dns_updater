@@ -166,12 +166,20 @@ void handle_malformed_request(struct connection_handler_data *data){
     send_responce(&responce, data->sock);
 }
 
-static const char* state_as_dot(state stat){
-    if(stat == STATE_OKAY) return "dot_okay";
-    if(stat == STATE_WARNING) return "dot_warning";
-    if(stat == STATE_ERROR) return "dot_error";
-    if(stat == STATE_UNUSED) return "dot_unused";
-    return "dot_undefined";
+static const char* state_as_style(state stat){
+    if(stat == STATE_OKAY) return "okay";
+    if(stat == STATE_WARNING) return "warn";
+    if(stat == STATE_ERROR) return "error";
+    if(stat == STATE_UNUSED) return "unused";
+    return "undefined";
+}
+
+static const char* state_as_message(state stat){
+    if(stat == STATE_OKAY) return "OKAY";
+    if(stat == STATE_WARNING) return "WARNING";
+    if(stat == STATE_ERROR) return "ERROR";
+    if(stat == STATE_UNUSED) return "UNUSED";
+    return "UNDEFINED";
 }
 
 void handle_state(struct connection_handler_data * data){
@@ -181,7 +189,7 @@ void handle_state(struct connection_handler_data * data){
 
     //build dns states
     errorIf(pthread_mutex_lock(&data->updater_data->ipc_data.mutex_dns_list), "handle_state: error acquiring dns list mutex\n");
-    char dns_states[1 + 350 * linked_list_size(data->updater_data->managed_dns_list)];
+    char dns_states[1 + 400 * linked_list_size(data->updater_data->managed_dns_list)];
     dns_states[0] = '\0';
 
     int total_written_bytes = 0;
@@ -191,8 +199,8 @@ void handle_state(struct connection_handler_data * data){
 
     while(ITERATOR_HAS_NEXT(&iter_dns)){
         struct managed_dns_entry * dns_entry = DNS_ITERATOR_NEXT(&iter_dns);
-        written_bytes = snprintf(dns_states+total_written_bytes, sizeof(dns_states) - total_written_bytes, "<li><h3>%s(%s): <span class= %s></span></h3></li>\r\n", 
-        dns_entry->dns_data.dns_name, dns_entry->dns_data.dns_type, state_as_dot(dns_entry->dns_data.entry_state));
+        written_bytes = snprintf(dns_states+total_written_bytes, sizeof(dns_states) - total_written_bytes, "        <li class=\"status %s\">%s(%s) - %s</li>\r\n",
+        state_as_style(dns_entry->dns_data.entry_state), dns_entry->dns_data.dns_name, dns_entry->dns_data.dns_type, state_as_message(dns_entry->dns_data.entry_state));
         total_written_bytes += written_bytes;
         if(total_written_bytes == (int) sizeof(dns_states)){
             fprintf(stderr, "missing space for dns entry responce");
@@ -223,9 +231,11 @@ void handle_state(struct connection_handler_data * data){
 
     char html_content[sizeof(HTML_STATE) + 100 + strlen(dns_states) + strlen(logs_in_html)];
     if(snprintf(html_content, sizeof(html_content), HTML_STATE,
-        state_as_dot(global_health_state),
-        state_as_dot(data->updater_data->ipc_data.info.ip4_state),
-        state_as_dot(data->updater_data->ipc_data.info.ip6_state),
+        state_as_style(global_health_state), state_as_message(global_health_state),
+        state_as_style(data->updater_data->ipc_data.info.ip4_state), 
+            state_as_message(data->updater_data->ipc_data.info.ip4_state),
+        state_as_style(data->updater_data->ipc_data.info.ip6_state), 
+            state_as_message(data->updater_data->ipc_data.info.ip6_state),
         dns_states,
         logs_in_html
         ) >= (int) sizeof(html_content)){
