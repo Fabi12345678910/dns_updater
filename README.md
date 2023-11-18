@@ -16,7 +16,9 @@ e.g. why did i built this?
 # configuration
 like said the configuration can be provided via either a configuration file or cli params,
 
-to run the updater, either use 'dns_updater file "path/to/file"', or 'dns_updater cli "<configuration_data>"',
+to run the updater, either use either one of:\
+`dns_updater file "path/to/file"`\
+`dns_updater cli "<configuration_data>"`\
 the file must contain the configuration data
 
 ## configuration data
@@ -109,10 +111,10 @@ dnsEntries: [
 
 
 # webserver
-yeah, this c code actually includes a webserver
+yeah, this c code actually includes a webserver\
 try the state page at /state, cause why not
 
-but DON'T make this available to the public internet, it does not support https
+but DON'T make this available to the public internet, it does not support https\
 also, badass hackers may call /dns-update to dos-attack you
 
 the state page should also not be routed directly to the internet, since there is only one http worker thread
@@ -133,7 +135,7 @@ the main thread initializes 3 workers:
 ## updater
 this thread waits for a trigger from the other threads to start updating.\
 when triggered, it retrieves the current ip adresses.\
-then all dns_entries are updated according to their provider\
+then all dns_entries are updated according to their provider
 
 ## timer
 really simple, triggers the updater all 10 Minutes
@@ -148,7 +150,10 @@ a redirect to /state
 a graphical overview of the state
 
 ### /dns-update
-triggers the updater after some secs, may be useful by routers when receiving a new ip
+triggers the updater after some secs, may be useful for routers when receiving a new ip
+
+### /health-check
+simple health-check, returns 200 if all is fine and 500 if there is a error
 
 # installing and running
 
@@ -162,6 +167,11 @@ requirements for running:
 
 ## compiling
 in the main directory, simply run `make` to build the executable `./dns_updater`.
+
+### changing webserver port number
+default http server listens to port 8008.\
+when you require the updater to use another port, compile using the following option:\
+`make EXTRA_CFLAGS=-DPORT_NUMBER=<insert_port_number>`
 
 ## running
 well, just go for it and provide configuration data as mentioned in "configuration"

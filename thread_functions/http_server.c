@@ -9,7 +9,9 @@
 #include <string.h>
 #include <errno.h>
 
-#define PORT_NUMBER 80
+#ifndef PORT_NUMBER
+    #define PORT_NUMBER 8008
+#endif
 
 struct connection_handler_data{
     struct updater_data *updater_data;
@@ -200,7 +202,7 @@ void handle_state(struct connection_handler_data * data){
     while(ITERATOR_HAS_NEXT(&iter_dns)){
         struct managed_dns_entry * dns_entry = DNS_ITERATOR_NEXT(&iter_dns);
         written_bytes = snprintf(dns_states+total_written_bytes, sizeof(dns_states) - total_written_bytes, "        <li class=\"status %s\">%s(%s) - %s</li>\r\n",
-        state_as_style(dns_entry->dns_data.entry_state), dns_entry->dns_data.dns_name, dns_entry->dns_data.dns_type, state_as_message(dns_entry->dns_data.entry_state));
+            state_as_style(dns_entry->dns_data.entry_state), dns_entry->dns_data.dns_name, dns_entry->dns_data.dns_type, state_as_message(dns_entry->dns_data.entry_state));
         total_written_bytes += written_bytes;
         if(total_written_bytes == (int) sizeof(dns_states)){
             fprintf(stderr, "missing space for dns entry responce");

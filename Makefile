@@ -1,4 +1,4 @@
-CFLAGS += -std=c11 -Wall -Wextra -pedantic -pthread -g -O3
+CFLAGS += -std=c11 -Wall -Wextra -pedantic -pthread -g -O3 $(EXTRA_CFLAGS)
 LDFLAGS += -pthread
 
 # Add the names of your executables here
