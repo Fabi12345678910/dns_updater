@@ -8,8 +8,9 @@
 //#define DEBUG_LEVEL 2
 #include "../common.h"
 
-
-#define INTERNET_DEVICE "wlp4s0"
+#ifndef IPV6_INTERNET_DEVICE
+    #define IPV6_INTERNET_DEVICE "wlp4s0"
+#endif
 
 //#include "../../helper_functions/common.h"
 
@@ -47,7 +48,7 @@ struct in6_addr* get_ipv6_address_local_interface(){
             DEBUG_PRINT_1("ip6 converted by macro: %s\n", ipv6_string);
 
             //check for a specific internet device
-            if (strcmp(addr->ifa_name, INTERNET_DEVICE)){
+            if (strcmp(addr->ifa_name, IPV6_INTERNET_DEVICE)){
                 DEBUG_PRINT_1("wrong internet device, ignoring...\n\n")
                 continue;
             }

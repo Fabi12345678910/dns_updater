@@ -173,6 +173,9 @@ default http server listens to port 8008.\
 when you require the updater to use another port, compile using the following option:\
 `make EXTRA_CFLAGS=-DPORT_NUMBER=<insert_port_number>`
 
+### changing the internet adapter used for IPv6 address
+`make EXTRA_CFLAGS=-DIPV6_INTERNET_DEVICE=<insert_device_eg_eth0>`
+
 ## running
 well, just go for it and provide configuration data as mentioned in "configuration"
 
