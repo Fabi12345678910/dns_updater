@@ -1,2 +1,4 @@
 test_private.txt
 .vscode
+*.o
+dns_updater
