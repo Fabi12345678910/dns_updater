@@ -104,7 +104,7 @@
 
 
     #if (ENABLE_LOG_STDOUT)
-        #define LOG_STDOUT(format, ...) fprintf(stdout, format, __VA_ARGS__);fprintf(stdout, "\n")
+        #define LOG_STDOUT(format, ...) fprintf(stdout, format, __VA_ARGS__);fprintf(stdout, "\n");fflush(stdout);
     #else
         #define LOG_STDOUT
     #endif

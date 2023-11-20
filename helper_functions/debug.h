@@ -10,6 +10,7 @@
     #define DEBUG_PRINT_CONDITIONAL(condition, ...) while (condition) \
     { \
         fprintf(stdout,__VA_ARGS__); \
+        fflush(stdout); \
         break; \
     }
 
