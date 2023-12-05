@@ -10,7 +10,7 @@
 
 static void ipv4Update(struct updater_data * data, struct managed_dns_entry *dns_entry, struct in_addr *new_ip4addr){
     (void) data;
-    
+
     struct in_addr * current_ip4addr = (struct in_addr *) dns_entry->dns_data.current_data;
     if(new_ip4addr == NULL){
         LOG_PRINTF(data, 300, "ipv4Update ERROR for %s: no ipv4 provided", dns_entry->dns_data.dns_name);
@@ -18,7 +18,9 @@ static void ipv4Update(struct updater_data * data, struct managed_dns_entry *dns
         return;
     }
     if(current_ip4addr != NULL && new_ip4addr->s_addr == current_ip4addr->s_addr){
-        LOG_PRINTF(data, 300, "ipv4Update OKAY for %s: no ip change detected", dns_entry->dns_data.dns_name);
+        if(LOG_UNCHANGED){
+            LOG_PRINTF(data, 300, "ipv4Update OKAY for %s: no ip change detected", dns_entry->dns_data.dns_name);
+        }
         dns_entry->dns_data.entry_state = STATE_OKAY;
         return;
     }
@@ -70,7 +72,10 @@ static void ipv6Update(struct updater_data * data, struct managed_dns_entry *dns
         return;
     }
     if(current_ip6addr != NULL && ipv6_adress_equals(current_ip6addr, new_ip6addr)){
-        LOG_PRINTF(data, 300, "ipv6Update OKAY for %s: no ip change detected", dns_entry->dns_data.dns_name);
+        if(LOG_UNCHANGED){
+            LOG_PRINTF(data, 300, "ipv6Update OKAY for %s: no ip change detected", dns_entry->dns_data.dns_name);
+        }
+
         dns_entry->dns_data.entry_state = STATE_OKAY;
         return;
     }
