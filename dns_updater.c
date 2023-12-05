@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
     errorIf(sigaction(SIGINT, &new_action, NULL), "error registering signal handler\n");
 
     while(1){
-        sleep(10);
+        pause();
         DEBUG_PRINT_1("checking for received sigint\n");
         if(sigint_shutdown){
 
