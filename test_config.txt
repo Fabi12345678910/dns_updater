@@ -1,10 +1,15 @@
 enableHTTPServer: true
 enableIPv4: true
-enableIPv6: false
+enableIPv6: true
 dnsEntries: [
     {
         name: dummy.internet,
         type: A,
+        provider: dummy
+    },
+    {
+	name: dummy.internet.test,
+        type: AAAA,
         provider: dummy
     }
 ]

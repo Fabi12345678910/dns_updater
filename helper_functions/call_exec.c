@@ -18,7 +18,7 @@ static void child_action(const char *executable, int pipe[], char *const argv[])
 
     // then use execvp to call the executable
     execvp(executable, argv);
-    error("error %d occured executeng the executable '%s'\n", errno, executable);
+    error("error %d occured executing the executable '%s'\n", errno, executable);
     int i = E2BIG;
     i++;
 }
@@ -27,10 +27,12 @@ char *call_exec(const char *executable, char *const argv[]){
     // create pipe
     int stdout_pipe[2];
     errorIf(pipe(stdout_pipe), "error creating pipe\n");
-    // fork
+    
+    DEBUG_PRINT_2("creating child process\n");
     pid_t pid = fork();
     errorIf(pid == -1, "error creating executable process\n");
     if(pid == 0){
+        DEBUG_PRINT_2("child: calling executable\n");
         child_action(executable, stdout_pipe, argv);
     }
     // parent continues from here

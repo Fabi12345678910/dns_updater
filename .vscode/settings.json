@@ -16,6 +16,7 @@
         "ipv4_getters.h": "c",
         "updater.h": "c",
         "configuration_reader_common.h": "c",
-        "call_exec.h": "c"
+        "call_exec.h": "c",
+        "in.h": "c"
     }
 }
