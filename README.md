@@ -176,6 +176,9 @@ when you require the updater to use another port, compile using the following op
 ### changing the internet adapter used for IPv6 address
 `make EXTRA_CFLAGS=-DIPV6_INTERNET_DEVICE=\\\"<insert_device_eg_eth0>\\\"`
 
+### disabling the logging when nothing changed
+`make EXTRA_CFLAGS=-DLOG_UNCHANGED=0`
+
 ## running
 well, just go for it and provide configuration data as mentioned in "configuration"
 

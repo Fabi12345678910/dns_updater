@@ -4,6 +4,10 @@
 #include "../helper_functions/common.h"
 #include <string.h>
 
+#ifndef LOG_UNCHANGED
+    #define LOG_UNCHANGED 1
+#endif
+
 static void ipv4Update(struct updater_data * data, struct managed_dns_entry *dns_entry, struct in_addr *new_ip4addr){
     (void) data;
     
